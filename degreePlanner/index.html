@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Degree Planner</title>
+</head>
+
+<style type="text/css">
+
+	@font-face{
+		font-family: headFont;
+		src: url(ui/fonts/Montserrat-VariableFont_wght.ttf)
+	}
+
+	@font-face{
+		font-family: bodyFont;
+		src: url(ui/fonts/Roboto-VariableFont_wdth,wght.ttf)
+	}
+	
+	#wrapper{
+
+		min-width:1000px;
+		min-height:150%;
+		border-top-left-radius: 15px;
+		display:flex;
+		margin: auto;
+		background-color: #14213D;
+		font-family: messageFont;
+	}
+
+
+	#left_panel{
+
+		min-height: 400px;
+		background-color: #14213D;
+		flex: 1;
+		text-align: center;
+		color: white;
+		font-family: bodyFont;
+	}
+
+	#left_panel label{
+		width: 100%;
+		height: 30px;
+		display: block;
+		margin-top: 5px;
+		font-size: 14px;
+		cursor: pointer;
+	}
+
+	#left_panel label:hover{
+		color: #83A8D1;
+	}
+
+	#right_panel{
+
+		min-height: 400px;
+		flex: 6;
+		text-align: center;
+	}
+
+	#header{
+		background-color: #14213D;
+		height: 70px;
+		font-size: 40px;
+		color: white;
+		text-align: center;
+		line-height: 70px;
+		font-family: headFont;
+	}
+
+	#content{
+		background-color: #5B6770;
+		flex: 1;
+		min-height: 430px;
+		border-top-left-radius: 15px;
+	}
+
+	#content input{
+		margin: 10px;
+		padding: 10px;
+		border: 1px solid black;
+		border-radius: 5px;
+		width: 80%;
+		font-family: bodyFont;
+		cursor: pointer;
+	}
+
+	#content input[type=button]:hover {
+		cursor: pointer;
+		background-color: #83A8D1;
+	}
+
+	#completed_courses {
+		padding: 10px;
+		align-items: center;
+	}
+
+</style>
+
+<body>
+
+	<div id="wrapper">
+
+		<div id="left_panel">
+
+			<div id="user_info" style="padding: 10px;">
+				<br>
+				<br>
+				<br>
+				<br>
+				<br>
+				<br>
+				<div style="margin-top: 30px; text-align: left;">
+					<label id="label_degree_plan" for="degree_plan_button">Degree Plan</label>
+					<label id="label_completed_courses" for="completed_courses_button">Course History</label>
+					<label id="label_course_catalog" for="course_catalog_button"> Course Catalog</label>
+					<label id="label_settings" for="settings_button"> Account Settings</label>
+					<label id="logout" for="logout">Log Out</label>
+				</div>
+				<br>
+			</div>
+
+
+		</div>
+
+		<div id="right_panel">
+			<div id="header">Degree Planner</div>
+			<div id="container" style="display:flex;">
+				<div id="content">
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { loadSettings } from "./settings.js";
+
+function _(element) {
+    return document.getElementById(element);
+}
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBik2Dr_kmYcE68RU7Ap15rSUXGtFHaspI",
+    authDomain: "degreeplanner-2e548.firebaseapp.com",
+    databaseURL: "https://degreeplanner-2e548-default-rtdb.firebaseio.com",
+    projectId: "degreeplanner-2e548",
+    storageBucket: "degreeplanner-2e548.appspot.com",
+    messagingSenderId: "320135681060",
+    appId: "1:320135681060:web:0347b73335827034f334b1"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+_("content").innerHTML = '<div style="padding:20px;">Degree plan feature coming soon.</div>';
+
+_("logout").addEventListener("click", function() {
+    signOut(auth).then(() => {
+        window.location = "login.html";
+    });
+});
+_("label_degree_plan").addEventListener("click", function() { _( "content" ).innerHTML = '<div style="padding:20px;">Degree plan feature coming soon.</div>'; });
+_("label_completed_courses").addEventListener("click", function() { _( "content" ).innerHTML = '<div style="padding:20px;">Completed courses feature coming soon.</div>'; });
+_("label_course_catalog").addEventListener("click", function() { _( "content" ).innerHTML = '<div style="padding:20px;">Course catalog feature coming soon.</div>'; });
+_("label_settings").addEventListener("click", function() {
+    loadSettings(app, "content");
+});
+</script>
+</body>
+</html>
