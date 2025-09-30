@@ -117,7 +117,7 @@
 					<label id="label_completed_courses" for="completed_courses_button">Course History</label>
 					<label id="label_course_catalog" for="course_catalog_button"> Course Catalog</label>
 					<label id="label_settings" for="settings_button"> Account Settings</label>
-					<label id="logout" for="logout">Log Out</label>
+					<label id="logout">Log Out</label>
 				</div>
 				<br>
 			</div>
@@ -138,7 +138,8 @@
 	<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { loadSettings } from "./settings.js";
+// Comment out settings import to avoid 404 error for now
+// import { loadSettings } from "./ui/settings.js";
 
 function _(element) {
     return document.getElementById(element);
@@ -157,19 +158,45 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-_("content").innerHTML = '<div style="padding:20px;">Degree plan feature coming soon.</div>';
+// Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+});
 
-_("logout").addEventListener("click", function() {
-    signOut(auth).then(() => {
-        window.location = "login.html";
+function initializeEventListeners() {
+    _("content").innerHTML = '<div style="padding:20px;">Degree plan feature coming soon.</div>';
+
+    _("logout").addEventListener("click", function() {
+        console.log("Logout button clicked");
+        
+        signOut(auth).then(() => {
+            console.log("Firebase sign out successful");
+            // Force redirect to login page
+            window.location.href = "/login";
+        }).catch((error) => {
+            console.error("Error signing out:", error);
+            // Even if Firebase logout fails, redirect to login
+            window.location.href = "/login";
+        });
     });
-});
-_("label_degree_plan").addEventListener("click", function() { _( "content" ).innerHTML = '<div style="padding:20px;">Degree plan feature coming soon.</div>'; });
-_("label_completed_courses").addEventListener("click", function() { _( "content" ).innerHTML = '<div style="padding:20px;">Completed courses feature coming soon.</div>'; });
-_("label_course_catalog").addEventListener("click", function() { _( "content" ).innerHTML = '<div style="padding:20px;">Course catalog feature coming soon.</div>'; });
-_("label_settings").addEventListener("click", function() {
-    loadSettings(app, "content");
-});
+    
+    _("label_degree_plan").addEventListener("click", function() { 
+        _("content").innerHTML = '<div style="padding:20px;">Degree plan feature coming soon.</div>'; 
+    });
+    
+    _("label_completed_courses").addEventListener("click", function() { 
+        _("content").innerHTML = '<div style="padding:20px;">Completed courses feature coming soon.</div>'; 
+    });
+    
+    _("label_course_catalog").addEventListener("click", function() { 
+        _("content").innerHTML = '<div style="padding:20px;">Course catalog feature coming soon.</div>'; 
+    });
+    
+    _("label_settings").addEventListener("click", function() {
+        // Temporarily disable settings until we fix the import
+        _("content").innerHTML = '<div style="padding:20px;">Settings feature coming soon.</div>';
+    });
+}
 </script>
 </body>
 </html>

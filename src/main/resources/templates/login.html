@@ -81,12 +81,12 @@
         <div id="error"></div>
 
 
-        <form id="login_form">
+        <form id="firebase_form">
             <input type="email" name="email" placeholder="Email"><br>
             <br>
             <input type="password" name="password" placeholder="Password"><br>
             <br>
-            <input type="button" value="Log In" id="login_button"><br>
+            <input type="button" value="Log In" id="firebase_button"><br>
             <br>
             <br>
             <br>
@@ -123,36 +123,43 @@ function _(element){
     return document.getElementById(element);
 }
 
-const login_button = _("login_button");
-login_button.addEventListener("click", firebaseLogin);
+const firebase_button = _("firebase_button");
+firebase_button.addEventListener("click", firebaseLogin);
 
 const signup_button = _("signup_button");
 signup_button.addEventListener("click", sign_up);
 
 function sign_up(){
-    window.location = "signup.html";
+    window.location = "/signup";
 }
 
 function firebaseLogin(){
-    login_button.disabled = true;
-    login_button.value = "Loading";
+    console.log("Firebase login started");
+    firebase_button.disabled = true;
+    firebase_button.value = "Loading";
 
-    const form = _("login_form");
+    const form = _("firebase_form");
     const email = form.email.value;
     const password = form.password.value;
+
+    console.log("Attempting to sign in with email:", email);
 
     signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
             // Signed in
-            window.location.href = "index.html";
+            console.log("Firebase authentication successful", userCredential);
+            console.log("Redirecting to /admin");
+            // Try direct navigation first
+            window.location = "/admin";
         })
         .catch((error) => {
+            console.error("Firebase authentication error:", error);
             _("error").innerHTML = error.message;
             _("error").style.display = "block";
         })
         .finally(() => {
-            login_button.disabled = false;
-            login_button.value = "Log In";
+            firebase_button.disabled = false;
+            firebase_button.value = "Log In";
         });
 }
 </script>
