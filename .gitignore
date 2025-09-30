@@ -1,0 +1,9 @@
+# For IntelliJ
+.idea/
+*.iml
+
+# Maven
+target/
+
+# Logs
+*.log
