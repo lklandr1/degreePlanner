@@ -127,7 +127,7 @@ const login_button = _("login_button");
 login_button.addEventListener("click", log_in);
 
 function log_in(){
-    window.location = "login.html";
+    window.location = "/login";
 }
 
 function firebaseSignup(){
@@ -161,7 +161,7 @@ function firebaseSignup(){
         })
         .then(() => {
             alert("Your profile was created.");
-            window.location = "login.html";
+            window.location = "/login";
         })
         .catch((error) => {
             _("error").innerHTML = error.message;

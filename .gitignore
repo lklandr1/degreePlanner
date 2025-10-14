@@ -7,3 +7,4 @@ target/
 
 # Logs
 *.log
+.vscode/settings.json
