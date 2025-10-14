@@ -35,21 +35,6 @@ public class LoginController{
         return "admin";
     }
 
-    @GetMapping("/student")
-    public String student() {
-        return "student";
-    }
-
-    @GetMapping("/advisor")
-    public String advisor() {
-        return "advisor";
-    }
-    
-    @GetMapping("/faculty")
-    public String faculty() {
-        return "faculty";
-    }
-
     @GetMapping("/logout")
     public String logout() {
         // For now, just redirect to login page

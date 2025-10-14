@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Courses</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        h1 {
+            color: #14213D;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #6c757d;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #dc3545;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+        .content {
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button" onclick="window.location.href='courseRequirements'">
+            ← Back to Course Requirements
+        </button>
+        <button class="logout-button" onclick="window.location.href='logout'">
+            Logout
+        </button>
+        <h1>Edit Courses</h1>
+        <div class="content">
+            <p>Edit individual course details, descriptions, and scheduling information.</p>
+            <p>Features:</p>
+            <ul>
+                <li>Add new courses to the catalog</li>
+                <li>Update course descriptions and syllabi</li>
+                <li>Modify course schedules and times</li>
+                <li>Set course capacity and enrollment limits</li>
+                <li>Manage course prerequisites and co-requisites</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

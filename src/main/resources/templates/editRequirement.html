@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Faculty Portal</title>
+    <title>Edit Requirements</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,6 +23,22 @@
             text-align: center;
             margin-bottom: 40px;
         }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #6c757d;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
         .logout-button {
             position: absolute;
             top: 20px;
@@ -39,37 +55,30 @@
         .logout-button:hover {
             background-color: #c82333;
         }
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 40px;
-        }
-        .nav-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            border: none;
-            background-color: #14213D;
-            color: #fff;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .nav-button:hover {
-            background-color: #0d1a2e;
+        .content {
+            margin-top: 60px;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <button class="back-button" onclick="window.location.href='courseRequirements'">
+            ← Back to Course Requirements
+        </button>
         <button class="logout-button" onclick="window.location.href='logout'">
             Logout
         </button>
-        <h1>Faculty Portal</h1>
-        <div class="button-container">
-            <button class="nav-button" onclick="window.location.href='courseRequirements'">
-                Course Requirements
-            </button>
+        <h1>Edit Requirements</h1>
+        <div class="content">
+            <p>Edit degree program requirements, prerequisites, and course sequences.</p>
+            <p>Features:</p>
+            <ul>
+                <li>Add new degree requirements</li>
+                <li>Modify existing prerequisites</li>
+                <li>Update course sequences</li>
+                <li>Set credit hour requirements</li>
+                <li>Manage core vs elective courses</li>
+            </ul>
         </div>
     </div>
 </body>
