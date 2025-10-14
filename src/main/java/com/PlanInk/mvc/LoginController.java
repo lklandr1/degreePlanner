@@ -2,6 +2,8 @@ package com.PlanInk.mvc;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class LoginController{
@@ -14,6 +16,13 @@ public class LoginController{
     @GetMapping("/login")
     public String login() {
         return "login";
+    }
+
+    @PostMapping("/login")
+    public String handleLogin(@RequestParam String username, @RequestParam String password) {
+        // To do: implement the login logic
+        // For now, we will just redirect to the student page
+        return "redirect:/studentPortal";
     }
 
     @GetMapping("/signup")
@@ -29,6 +38,11 @@ public class LoginController{
     @GetMapping("/student")
     public String student() {
         return "student";
+    }
+
+    @GetMapping("/advisor")
+    public String advisor() {
+        return "advisor";
     }
     
     @GetMapping("/faculty")

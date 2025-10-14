@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Portal</title>
+    <title>Student Portal</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,7 +16,6 @@
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: relative;
         }
         h1 {
             color: #14213D;
@@ -58,6 +57,9 @@
         .logout-button:hover {
             background-color: #c82333;
         }
+        .container {
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -65,16 +67,16 @@
         <button class="logout-button" onclick="window.location.href='logout'">
             Logout
         </button>
-        <h1>Admin Portal</h1>
+        <h1>Student Portal</h1>
         <div class="button-container">
-            <button class="nav-button" onclick="window.location.href='student'">
-                Student Portal
+            <button class="nav-button" onclick="window.location.href='progress'">
+                Progress
             </button>
-            <button class="nav-button" onclick="window.location.href='advisor'">
-                Advisor Portal
+            <button class="nav-button" onclick="window.location.href='sandbox'">
+                Sandbox
             </button>
-            <button class="nav-button" onclick="window.location.href='faculty'">
-                Faculty Portal
+            <button class="nav-button" onclick="window.location.href='classes'">
+                Classes
             </button>
         </div>
     </div>
