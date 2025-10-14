@@ -45,4 +45,11 @@ public class LoginController{
         return "faculty";
     }
 
+    @GetMapping("/logout")
+    public String logout() {
+        // For now, just redirect to login page
+        // In a real application, you would invalidate the session here
+        return "redirect:/login";
+    }
+
 }

@@ -41,10 +41,32 @@
         .nav-button:hover {
             background-color: #0d1a2e;
         }
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #dc3545;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+        .container {
+            position: relative;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <button class="logout-button" onclick="window.location.href='logout'">
+            Logout
+        </button>
         <h1>Student Portal</h1>
         <div class="button-container">
             <button class="nav-button" onclick="window.location.href='progress'">
