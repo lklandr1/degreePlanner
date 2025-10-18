@@ -22,7 +22,7 @@ public class LoginController{
     public String handleLogin(@RequestParam String username, @RequestParam String password) {
         // To do: implement the login logic
         // For now, we will just redirect to the student page
-        return "redirect:/studentPortal";
+        return "redirect:/student";
     }
 
     @GetMapping("/signup")

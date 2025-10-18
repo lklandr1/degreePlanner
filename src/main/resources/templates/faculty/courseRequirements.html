@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Edit Courses</title>
+    <title>Course Requirements</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -58,27 +58,46 @@
         .content {
             margin-top: 60px;
         }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .nav-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
+            background-color: #14213D;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .nav-button:hover {
+            background-color: #0d1a2e;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <button class="back-button" onclick="window.location.href='courseRequirements'">
-            ← Back to Course Requirements
+        <button class="back-button" onclick="window.location.href='/faculty'">
+            ← Back to Faculty Portal
         </button>
         <button class="logout-button" onclick="window.location.href='logout'">
             Logout
         </button>
-        <h1>Edit Courses</h1>
+        <h1>Course Requirements</h1>
         <div class="content">
-            <p>Edit individual course details, descriptions, and scheduling information.</p>
-            <p>Features:</p>
-            <ul>
-                <li>Add new courses to the catalog</li>
-                <li>Update course descriptions and syllabi</li>
-                <li>Modify course schedules and times</li>
-                <li>Set course capacity and enrollment limits</li>
-                <li>Manage course prerequisites and co-requisites</li>
-            </ul>
+            <p>View course requirements and prerequisites for degree programs.</p>
+            <div class="button-container">
+                <button class="nav-button" onclick="window.location.href='/faculty/editRequirements'">
+                    Edit Requirements
+                </button>
+                <button class="nav-button" onclick="window.location.href='/faculty/editCourse'">
+                    Edit Courses
+                </button>
+            </div>
         </div>
     </div>
 </body>

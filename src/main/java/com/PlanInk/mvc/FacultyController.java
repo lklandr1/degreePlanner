@@ -8,21 +8,21 @@ public class FacultyController {
 
     @GetMapping("/faculty")
     public String faculty() {
-        return "facultyPortal";
+        return "faculty/facultyPortal";
     }
 
-    @GetMapping("/courseRequirements")
+    @GetMapping("/faculty/courseRequirements")
     public String courseRequirements() {
-        return "courseRequirements";
+        return "faculty/courseRequirements";
     }
 
-    @GetMapping("/editRequirement")
+    @GetMapping("/faculty/editRequirements")
     public String editRequirement() {
-        return "editRequirement";
+        return "faculty/editRequirement";
     }
 
-    @GetMapping("/editCourse")
+    @GetMapping("/faculty/editCourse")
     public String editCourse() {
-        return "editCourse";
+        return "faculty/editCourse";
     }
 }

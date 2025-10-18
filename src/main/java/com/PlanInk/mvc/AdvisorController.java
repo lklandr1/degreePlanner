@@ -8,16 +8,16 @@ public class AdvisorController {
 
     @GetMapping("/advisor")
     public String advisor() {
-        return "advisorPortal";
+        return "advisor/advisorPortal";
     }
 
-    @GetMapping("/individualStudentAdvisor")
+    @GetMapping("/advisor/individualStudents")
     public String individualStudentAdvisor() {
-        return "individualStudentAdvisor";
+        return "advisor/individualStudentAdvisor";
     }
 
-    @GetMapping("/changesAdvisor")
+    @GetMapping("/advisor/curriculumUpdates")
     public String changesAdvisor() {
-        return "changesAdvisor";
+        return "advisor/advisorChanges";
     }
 }

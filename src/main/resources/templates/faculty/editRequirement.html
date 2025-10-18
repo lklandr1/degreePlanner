@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Course Requirements</title>
+    <title>Edit Requirements</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -58,46 +58,19 @@
         .content {
             margin-top: 60px;
         }
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 40px;
-        }
-        .nav-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            border: none;
-            background-color: #14213D;
-            color: #fff;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .nav-button:hover {
-            background-color: #0d1a2e;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <button class="back-button" onclick="window.location.href='faculty'">
-            ← Back to Faculty Portal
+        <button class="back-button" onclick="window.location.href='/faculty/courseRequirements'">
+            ← Back to Course Requirements
         </button>
         <button class="logout-button" onclick="window.location.href='logout'">
             Logout
         </button>
-        <h1>Course Requirements</h1>
+        <h1>Edit Requirements</h1>
         <div class="content">
-            <p>Manage course requirements and prerequisites for degree programs.</p>
-            <div class="button-container">
-                <button class="nav-button" onclick="window.location.href='editRequirement'">
-                    Edit Requirements
-                </button>
-                <button class="nav-button" onclick="window.location.href='editCourse'">
-                    Edit Courses
-                </button>
-            </div>
+            <p>Edit degree program requirements, prerequisites, and course sequences.</p>
         </div>
     </div>
 </body>
