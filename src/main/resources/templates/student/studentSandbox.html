@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Portal</title>
+    <title>Sandbox</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,6 +23,41 @@
             text-align: center;
             margin-bottom: 40px;
         }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #6c757d;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #dc3545;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+        .content {
+            margin-top: 60px;
+        }
         .button-container {
             display: flex;
             justify-content: center;
@@ -42,41 +77,16 @@
         .nav-button:hover {
             background-color: #0d1a2e;
         }
-        .logout-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 5px;
-            border: none;
-            background-color: #dc3545;
-            color: #fff;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .logout-button:hover {
-            background-color: #c82333;
-        }
     </style>
 </head>
 <body>
     <div class="container">
+        <button class="back-button" onclick="window.location.href='/student'">← Back to Student Portal</button>
         <button class="logout-button" onclick="window.location.href='/logout'">
             Logout
         </button>
-        <h1>Admin Portal</h1>
-        <div class="button-container">
-            <button class="nav-button" onclick="window.location.href='student'">
-                Student Portal
-            </button>
-            <button class="nav-button" onclick="window.location.href='advisor'">
-                Advisor Portal
-            </button>
-            <button class="nav-button" onclick="window.location.href='faculty'">
-                Faculty Portal
-            </button>
-        </div>
+        <h1>Sandbox</h1>
+        <p>Experiment with different course combinations and degree plans in this sandbox environment, ability to submit for review.</p>
     </div>
 </body>
 </html>

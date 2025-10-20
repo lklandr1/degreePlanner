@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Portal</title>
+    <title>Individual Students</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,24 +23,21 @@
             text-align: center;
             margin-bottom: 40px;
         }
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 40px;
-        }
-        .nav-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
             border: none;
-            background-color: #14213D;
+            background-color: #6c757d;
             color: #fff;
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        .nav-button:hover {
-            background-color: #0d1a2e;
+        .back-button:hover {
+            background-color: #5a6268;
         }
         .logout-button {
             position: absolute;
@@ -58,24 +55,22 @@
         .logout-button:hover {
             background-color: #c82333;
         }
+        .content {
+            margin-top: 60px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <button class="back-button" onclick="window.location.href='/advisor'">
+            ← Back to Advisor Portal
+        </button>
         <button class="logout-button" onclick="window.location.href='/logout'">
             Logout
         </button>
-        <h1>Admin Portal</h1>
-        <div class="button-container">
-            <button class="nav-button" onclick="window.location.href='student'">
-                Student Portal
-            </button>
-            <button class="nav-button" onclick="window.location.href='advisor'">
-                Advisor Portal
-            </button>
-            <button class="nav-button" onclick="window.location.href='faculty'">
-                Faculty Portal
-            </button>
+        <h1>Individual Students</h1>
+        <div class="content">
+            <p>Manage individual student advising, academic progress, and course recommendations here.</p>
         </div>
     </div>
 </body>

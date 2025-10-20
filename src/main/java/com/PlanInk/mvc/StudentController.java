@@ -8,22 +8,22 @@ public class StudentController{
 
     @GetMapping("/student")
     public String student() {
-        return "studentPortal";
+        return "student/studentPortal";
     }
 
-    @GetMapping("/progress")
+    @GetMapping("/student/progress")
     public String progress() {
-        return "studentProgress";
+        return "student/studentProgress";
     }
 
-    @GetMapping("/sandbox")
+    @GetMapping("/student/sandbox")
     public String sandbox() {
-        return "studentSandbox";
+        return "student/studentSandbox";
     }
 
-    @GetMapping("/classes")
+    @GetMapping("/student/classes")
     public String classes() {
-        return "studentClasses";
+        return "student/studentClasses";
     }
 
 }

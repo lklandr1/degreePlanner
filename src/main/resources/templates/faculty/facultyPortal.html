@@ -39,15 +39,38 @@
         .logout-button:hover {
             background-color: #c82333;
         }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .nav-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
+            background-color: #14213D;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .nav-button:hover {
+            background-color: #0d1a2e;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <button class="logout-button" onclick="window.location.href='logout'">
+        <button class="logout-button" onclick="window.location.href='/logout'">
             Logout
         </button>
         <h1>Faculty Portal</h1>
-        <p>Welcome to the Faculty Portal. Manage courses and student information here.</p>
+        <div class="button-container">
+            <button class="nav-button" onclick="window.location.href='faculty/courseRequirements'">
+                Course Requirements - Will eventually decide on specific majors
+            </button>
+        </div>
     </div>
 </body>
 </html>

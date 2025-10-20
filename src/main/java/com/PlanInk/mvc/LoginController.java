@@ -22,7 +22,7 @@ public class LoginController{
     public String handleLogin(@RequestParam String username, @RequestParam String password) {
         // To do: implement the login logic
         // For now, we will just redirect to the student page
-        return "redirect:/studentPortal";
+        return "redirect:/student";
     }
 
     @GetMapping("/signup")
@@ -33,16 +33,6 @@ public class LoginController{
     @GetMapping("/admin")
     public String admin() {
         return "admin";
-    }
-
-    @GetMapping("/advisor")
-    public String advisor() {
-        return "advisor";
-    }
-    
-    @GetMapping("/faculty")
-    public String faculty() {
-        return "faculty";
     }
 
     @GetMapping("/logout")
