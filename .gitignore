@@ -8,3 +8,6 @@ target/
 # Logs
 *.log
 .vscode/settings.json
+src/main/resources/firebase-service-account.json
+src/main/resources/firebase-*.json
+test.sh
