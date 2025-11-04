@@ -1,9 +1,18 @@
 package com.PlanInk.mvc;
 
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
+import com.google.firebase.cloud.FirestoreClient;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Controller
 public class LoginController{
@@ -19,10 +28,26 @@ public class LoginController{
     }
 
     @PostMapping("/login")
-    public String handleLogin(@RequestParam String username, @RequestParam String password) {
-        // To do: implement the login logic
-        // For now, we will just redirect to the student page
-        return "redirect:/student";
+    public String handleLogin(
+            @RequestParam String username,
+            @RequestParam String password,
+            @RequestParam String userType,
+            HttpSession session) throws ExecutionException, InterruptedException {
+
+        Firestore db = FirestoreClient.getFirestore();
+        ApiFuture<QuerySnapshot> future = db.collection(userType)
+                .whereEqualTo("email", username)
+                .whereEqualTo("password", password) // replace with hashed compare later
+                .get();
+
+        if (!future.get().isEmpty()) {
+            // store minimal info in session
+            session.setAttribute("currentUser", username);
+            session.setAttribute("role", userType.toUpperCase());
+            return "redirect:/" + userType.replace("ts", "t").replace("rs", "r");
+        } else {
+            return "redirect:/login?error=invalidCredentials";
+        }
     }
 
     @GetMapping("/signup")
@@ -36,10 +61,13 @@ public class LoginController{
     }
 
     @GetMapping("/logout")
-    public String logout() {
-        // For now, just redirect to login page
-        // In a real application, you would invalidate the session here
+    public String logout(HttpSession session) {
+        // Invalidate the current user session
+        session.invalidate();
+
+        // Redirect to login page
         return "redirect:/login";
     }
+
 
 }
