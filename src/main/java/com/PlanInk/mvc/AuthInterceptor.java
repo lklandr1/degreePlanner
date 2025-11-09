@@ -23,6 +23,21 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
 
+        String role = (String) session.getAttribute("role");
+        if (path.startsWith("/student") && !"STUDENTS".equals(role)) {
+            System.out.println("Access denied: not a student. Role = " + role);
+            response.sendRedirect("/login?error=notAuthenticated");
+            return false;
+        } else if (path.startsWith("/faculty") && !"FACULTY".equals(role)) {
+            System.out.println("Access denied: not faculty. Role = " + role);
+            response.sendRedirect("/login?error=notAuthenticated");
+            return false;
+        } else if (path.startsWith("/advisor") && !"ADVISORS".equals(role)) {
+            System.out.println("Access denied: not advisor. Role = " + role);
+            response.sendRedirect("/login?error=notAuthenticated");
+            return false;
+        }
+
         return true; // user is authenticated
     }
 }
