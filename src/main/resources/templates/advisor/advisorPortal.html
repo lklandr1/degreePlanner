@@ -58,6 +58,49 @@
         .logout-button:hover {
             background-color: #c82333;
         }
+        .students-section {
+            margin-top: 50px;
+        }
+        .students-section h2 {
+            color: #14213D;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+        thead {
+            background-color: #14213D;
+            color: #fff;
+        }
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: left;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status {
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        .status.error {
+            color: #c82333;
+        }
+        .status.info {
+            color: #14213D;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 14px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -74,6 +117,106 @@
                 Curriculum Changes
             </button>
         </div>
+
+        <div class="students-section">
+            <h2>Your Students</h2>
+            <input id="studentSearch" class="search-input" type="text" placeholder="Search students by name, email, or ID...">
+            <div id="studentsStatus" class="status info">Loading students...</div>
+            <table id="studentsTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Major</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsBody">
+                </tbody>
+            </table>
+        </div>
     </div>
+    <script>
+        async function loadStudents() {
+            const statusEl = document.getElementById('studentsStatus');
+            const table = document.getElementById('studentsTable');
+            const tbody = document.getElementById('studentsBody');
+            const searchInput = document.getElementById('studentSearch');
+            let studentsCache = [];
+
+            try {
+                const response = await fetch('/api/secure/advisors/me/students');
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || 'Failed to load students.');
+                }
+
+                const students = await response.json();
+
+                if (!Array.isArray(students) || students.length === 0) {
+                    statusEl.textContent = 'No students assigned yet.';
+                    statusEl.className = 'status info';
+                    table.style.display = 'none';
+                    return;
+                }
+                studentsCache = students;
+                renderStudents(studentsCache, tbody, table, statusEl);
+                statusEl.textContent = '';
+                table.style.display = 'table';
+
+                searchInput.addEventListener('input', () => {
+                    const query = searchInput.value.trim().toLowerCase();
+                    if (!query) {
+                        renderStudents(studentsCache, tbody, table, statusEl);
+                        statusEl.textContent = '';
+                        return;
+                    }
+                    const filtered = studentsCache.filter(student => {
+                        return ['studentID', 'name', 'email', 'majorID'].some(key => {
+                            const value = String(student[key] ?? '').toLowerCase();
+                            return value.includes(query);
+                        });
+                    });
+                    if (filtered.length === 0) {
+                        tbody.innerHTML = '';
+                        table.style.display = 'none';
+                        statusEl.textContent = 'No students match your search.';
+                        statusEl.className = 'status info';
+                    } else {
+                        renderStudents(filtered, tbody, table, statusEl);
+                        statusEl.textContent = '';
+                    }
+                });
+
+            } catch (error) {
+                console.error('Failed to fetch advisor students:', error);
+                table.style.display = 'none';
+                const message = error.message || 'Unable to load students right now.';
+                statusEl.textContent = message;
+                statusEl.className = 'status error';
+            }
+        }
+
+        function renderStudents(students, tbody, table) {
+            const escapeHtml = value => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            tbody.innerHTML = students.map(student => `
+                <tr>
+                    <td>${escapeHtml(student.studentID)}</td>
+                    <td>${escapeHtml(student.name)}</td>
+                    <td>${escapeHtml(student.email)}</td>
+                    <td>${escapeHtml(student.majorID)}</td>
+                </tr>
+            `).join('');
+            table.style.display = 'table';
+        }
+
+        document.addEventListener('DOMContentLoaded', loadStudents);
+    </script>
 </body>
 </html>
