@@ -1,21 +1,30 @@
 package com.PlanInk.mvc;
 
+import com.PlanInk.mvc.auth.FirebaseAuthRestService;
+import com.PlanInk.mvc.auth.FirebaseLoginException;
 import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.QueryDocumentSnapshot;
-import com.google.cloud.firestore.QuerySnapshot;
-import com.google.firebase.cloud.FirestoreClient;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Controller
 public class LoginController{
+
+    private final FirebaseAuthRestService firebaseAuthRestService;
+    private final Firestore firestore;
+
+    public LoginController(FirebaseAuthRestService firebaseAuthRestService, Firestore firestore) {
+        this.firebaseAuthRestService = firebaseAuthRestService;
+        this.firestore = firestore;
+    }
 
     @GetMapping("/")
     public String home() {
@@ -32,32 +41,41 @@ public class LoginController{
             @RequestParam String username,
             @RequestParam String password,
             @RequestParam String userType,
-            HttpSession session) throws ExecutionException, InterruptedException {
+            HttpSession session) {
 
-        Firestore db = FirestoreClient.getFirestore();
-        ApiFuture<QuerySnapshot> future = db.collection(userType)
-                .whereEqualTo("email", username)
-                .whereEqualTo("password", password) // replace with hashed compare later
-                .get();
-
-        if (!future.get().isEmpty()) {
-            // store minimal info in session
-            session.setAttribute("currentUser", username);
-            session.setAttribute("role", userType.toUpperCase());
-            return "redirect:/" + userType.replace("ts", "t").replace("rs", "r");
-        } else {
-            return "redirect:/login?error=invalidCredentials";
+        String normalizedCollection = normalizeCollection(userType);
+        if (normalizedCollection == null) {
+            return "redirect:/login?error=invalidRole";
         }
-    }
 
-    @GetMapping("/signup")
-    public String signup() {
-        return "signup";
-    }
+        try {
+            var signInResponse = firebaseAuthRestService
+                    .signInWithEmailAndPassword(username, password);
+            String uid = signInResponse.getLocalId();
 
-    @GetMapping("/admin")
-    public String admin() {
-        return "admin";
+            ApiFuture<DocumentSnapshot> future =
+                    firestore.collection(normalizedCollection).document(uid).get();
+            DocumentSnapshot document = future.get(10, TimeUnit.SECONDS);
+
+            if (!document.exists()) {
+                return "redirect:/login?error=profileMissing";
+            }
+
+            session.setAttribute("currentUser", username);
+            session.setAttribute("role", normalizedCollection.toUpperCase());
+            session.setAttribute("uid", uid);
+
+            return "redirect:/" + resolveRedirect(normalizedCollection);
+
+        } catch (FirebaseLoginException e) {
+            String suffix = e.isInvalidCredentials() ? "invalidCredentials" : "authError";
+            return "redirect:/login?error=" + suffix;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "redirect:/login?error=authError";
+        } catch (ExecutionException | TimeoutException e) {
+            return "redirect:/login?error=authError";
+        }
     }
 
     @GetMapping("/logout")
@@ -69,5 +87,25 @@ public class LoginController{
         return "redirect:/login";
     }
 
+    private String normalizeCollection(String userType) {
+        if (userType == null) {
+            return null;
+        }
+        return switch (userType.toLowerCase()) {
+            case "students" -> "students";
+            case "faculty" -> "faculty";
+            case "advisors" -> "advisors";
+            default -> null;
+        };
+    }
+
+    private String resolveRedirect(String collection) {
+        return switch (collection) {
+            case "students" -> "student";
+            case "faculty" -> "faculty";
+            case "advisors" -> "advisor";
+            default -> "login";
+        };
+    }
 
 }
