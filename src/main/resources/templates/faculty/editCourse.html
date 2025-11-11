@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Edit Courses</title>
+    <title>Edit Course</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -62,16 +62,62 @@
 </head>
 <body>
     <div class="container">
-        <button class="back-button" onclick="window.location.href='/faculty/courseRequirements'">
+        <button class="back-button" onclick="goBack()">
             ← Back to Course Requirements
         </button>
         <button class="logout-button" onclick="window.location.href='/logout'">
             Logout
         </button>
-        <h1>Edit Courses</h1>
+
+
+
+        <h1>        
+            <div class="course-name" id="courseName" th:text="'Edit ' + ${courseName}">
+            Edit Course
+            </div>
+        </h1>
+
+
+
         <div class="content">
             <p>Edit individual course details, prerequisites, descriptions, and scheduling information, etc.</p>
         </div>
     </div>
+
+
+    <script>
+        function editCourse() {
+            const courseNameElement = document.getElementById('courseName');
+            const fullText = courseNameElement.textContent.trim();
+            const courseTitle = fullText.replace('Edit ', '');
+            window.location.href = '/faculty/editCourse?course=' + encodeURIComponent(courseTitle);
+        }
+
+        function goBack() {
+            // Get major from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const majorName = urlParams.get('major');
+            
+            if (majorName) {
+                window.location.href = '/faculty/courseRequirements?major=' + encodeURIComponent(majorName);
+            } else {
+                // Fallback to sessionStorage if URL parameter is missing
+                const storedMajor = sessionStorage.getItem('currentMajor');
+                if (storedMajor) {
+                    window.location.href = '/faculty/courseRequirements?major=' + encodeURIComponent(storedMajor);
+                } else {
+                    window.location.href = '/faculty/courseRequirements';
+                }
+            }
+        }
+
+        // Store major name when page loads (if available) for fallback
+        document.addEventListener('DOMContentLoaded', function() {
+            const majorName = '[[${majorName}]]';
+            if (majorName && majorName !== '' && majorName !== 'null') {
+                sessionStorage.setItem('currentMajor', majorName);
+            }
+        });
+    </script>
 </body>
 </html>

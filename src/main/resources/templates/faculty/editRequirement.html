@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Edit Requirements</title>
     <style>
@@ -62,16 +62,35 @@
 </head>
 <body>
     <div class="container">
-        <button class="back-button" onclick="window.location.href='/faculty/courseRequirements'">
+        <button class="back-button" onclick="goBack()">
             ← Back to Course Requirements
         </button>
         <button class="logout-button" onclick="window.location.href='/logout'">
             Logout
         </button>
-        <h1>Edit Requirements</h1>
+
+
+        <h1>
+            <div class="major-name" th:text="${majorName} + ' Requirements'">
+            Edit Requirements
+            </div>
+        </h1>
+
+
         <div class="content">
             <p>Edit degree program requirements, prerequisites, and course sequences.</p>
         </div>
     </div>
+
+    <script>
+        function goBack() {
+            const majorName = '[[${majorName}]]'; // Thymeleaf syntax to get the major name
+            if (majorName && majorName !== 'Major') {
+                window.location.href = '/faculty/courseRequirements?major=' + encodeURIComponent(majorName);
+            } else {
+                window.location.href = '/faculty/courseRequirements';
+            }
+        }
+    </script>
 </body>
 </html>

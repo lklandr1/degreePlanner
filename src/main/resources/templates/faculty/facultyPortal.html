@@ -58,6 +58,89 @@
         .nav-button:hover {
             background-color: #0d1a2e;
         }
+        
+        /* Search bar styles */
+        .search-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .search-bar {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+        }
+        
+        .search-bar:focus {
+            outline: none;
+            border-color: #14213D;
+            background-color: white;
+        }
+        
+        /* Major list styles */
+        .majors-container {
+            margin-top: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+        }
+        
+        .major-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .major-button {
+            padding: 20px 30px;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: left;
+            border: none;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: white;
+            color: #14213D;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .major-button:last-child {
+            border-bottom: none;
+        }
+        
+        .major-button:hover {
+            background-color: #f8f9fa;
+            color: #14213D;
+        }
+        
+        .major-button:active {
+            background-color: #e9ecef;
+        }
+        
+        /* Hide majors that don't match search */
+        .major-button.hidden {
+            display: none;
+        }
+        
+        /* No results message */
+        .no-results {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -66,11 +149,103 @@
             Logout
         </button>
         <h1>Faculty Portal</h1>
-        <div class="button-container">
-            <button class="nav-button" onclick="window.location.href='faculty/courseRequirements'">
-                Course Requirements - Will eventually decide on specific majors
-            </button>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" class="search-bar" id="searchBar" placeholder="Search for a major..." onkeyup="searchMajors()">
+        </div>
+        
+        <!-- Majors List -->
+        <div class="majors-container">
+            <div class="major-grid" id="majorGrid">
+                <!-- Sample majors - these will be populated from Firestore database -->
+                <button class="major-button" onclick="goToCourseRequirements('Computer Science')">
+                    Computer Science
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Mathematics')">
+                    Mathematics
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Biology')">
+                    Biology
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Chemistry')">
+                    Chemistry
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Physics')">
+                    Physics
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('English Literature')">
+                    English Literature
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('History')">
+                    History
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Psychology')">
+                    Psychology
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Business Administration')">
+                    Business Administration
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Economics')">
+                    Economics
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Political Science')">
+                    Political Science
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Sociology')">
+                    Sociology
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Art')">
+                    Art
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Music')">
+                    Music
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Theater')">
+                    Theater
+                </button>
+                <button class="major-button" onclick="goToCourseRequirements('Philosophy')">
+                    Philosophy
+                </button>
+            </div>
+            <div class="no-results" id="noResults">
+                No majors found matching your search.
+            </div>
         </div>
     </div>
+    
+    <script>
+        // Search functionality
+        function searchMajors() {
+            const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+            const majorButtons = document.querySelectorAll('.major-button');
+            const noResults = document.getElementById('noResults');
+            let visibleCount = 0;
+            
+            majorButtons.forEach(button => {
+                const majorName = button.textContent.toLowerCase();
+                if (majorName.includes(searchTerm)) {
+                    button.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    button.classList.add('hidden');
+                }
+            });
+            
+            // Show/hide no results message
+            if (visibleCount === 0 && searchTerm !== '') {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        }
+        
+        // Navigate to course requirements page with selected major
+        function goToCourseRequirements(majorName) {
+            // You can modify this URL structure based on how you want to pass the major information
+            window.location.href = '/faculty/courseRequirements?major=' + encodeURIComponent(majorName);
+        }
+    </script>
+</body>
 </body>
 </html>
