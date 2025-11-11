@@ -50,16 +50,6 @@ public class LoginController{
         }
     }
 
-    @GetMapping("/signup")
-    public String signup() {
-        return "signup";
-    }
-
-    @GetMapping("/admin")
-    public String admin() {
-        return "admin";
-    }
-
     @GetMapping("/logout")
     public String logout(HttpSession session) {
         // Invalidate the current user session
