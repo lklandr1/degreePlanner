@@ -4,6 +4,7 @@ import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.auth.UserRecord.CreateRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Handles displaying and processing signup form for
@@ -59,6 +61,8 @@ public class SignupController {
             data.put("uid", uid);
             data.put("name", params.get("name"));
             data.put("email", params.get("email"));
+            data.put("createdAt", System.currentTimeMillis());
+            String successDetail = null;
 
             switch (userType.toLowerCase()) {
                 case "student" -> {
@@ -68,14 +72,36 @@ public class SignupController {
                     firestore.collection("students").document(uid).set(data);
                 }
                 case "advisor" -> {
-                    data.put("advisorID", params.get("advisorID"));
-                    data.put("department", params.get("department"));
+                    String pin = params.get("advisorPin");
+                    if (!"1111".equals(pin)) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid advisor PIN.");
+                    }
+                    String name = params.get("name");
+                    String sanitized = name == null ? "" : name.toLowerCase().replaceAll("[^a-z0-9]", "");
+                    if (sanitized.isBlank()) {
+                        sanitized = "advisor";
+                    }
+                    int randomSuffix = ThreadLocalRandom.current().nextInt(100, 1000);
+                    String advisorId = sanitized + randomSuffix;
+                    data.put("advisorID", advisorId);
                     firestore.collection("advisors").document(uid).set(data);
+                    successDetail = "Advisor ID: " + advisorId;
                 }
                 case "faculty" -> {
-                    data.put("facultyID", params.get("facultyID"));
-                    data.put("department", params.get("department"));
+                    String pin = params.get("facultyPin");
+                    if (!"2222".equals(pin)) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid faculty PIN.");
+                    }
+                    String name = params.get("name");
+                    String sanitized = name == null ? "" : name.toLowerCase().replaceAll("[^a-z0-9]", "");
+                    if (sanitized.isBlank()) {
+                        sanitized = "faculty";
+                    }
+                    int randomSuffix = ThreadLocalRandom.current().nextInt(100, 1000);
+                    String facultyId = sanitized + randomSuffix;
+                    data.put("facultyID", facultyId);
                     firestore.collection("faculty").document(uid).set(data);
+                    successDetail = "Faculty ID: " + facultyId;
                 }
                 default -> {
                     return ResponseEntity.badRequest().body("Invalid userType: " + userType);
@@ -83,7 +109,11 @@ public class SignupController {
             }
 
             // 3️⃣ Return success message
-            return ResponseEntity.ok("✅ " + userType + " created successfully!");
+            String message = "✅ " + userType + " created successfully!";
+            if (successDetail != null) {
+                message += " " + successDetail;
+            }
+            return ResponseEntity.ok(message);
 
         } catch (Exception e) {
             e.printStackTrace();

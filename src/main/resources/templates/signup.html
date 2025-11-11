@@ -72,6 +72,12 @@
         .error {
             color: red;
         }
+
+        .hint {
+            font-size: 0.9rem;
+            color: #555;
+            margin-top: 0.3rem;
+        }
     </style>
 </head>
 <body>
@@ -102,13 +108,113 @@
 </div>
 
 <script>
-    function updateForm() {
+    const majorsState = {
+        cache: null,
+        loading: false,
+        error: null
+    };
+
+    const advisorsState = {
+        cache: null,
+        loading: false,
+        error: null
+    };
+
+    function escapeHtml(value) {
+        return value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    async function fetchMajors() {
+        if (majorsState.cache || majorsState.loading || majorsState.error) {
+            return majorsState.cache;
+        }
+
+        majorsState.loading = true;
+        try {
+            const response = await fetch('/api/majors');
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+            const data = await response.json();
+            majorsState.cache = Array.isArray(data) ? data : [];
+            return majorsState.cache;
+        } catch (err) {
+            console.error('Failed to load majors:', err);
+            majorsState.error = 'Unable to load majors right now. Please try again later.';
+            return null;
+        } finally {
+            majorsState.loading = false;
+        }
+    }
+
+    async function fetchAdvisors() {
+        if (advisorsState.cache || advisorsState.loading || advisorsState.error) {
+            return advisorsState.cache;
+        }
+
+        advisorsState.loading = true;
+        try {
+            const response = await fetch('/api/advisors');
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+            const data = await response.json();
+            advisorsState.cache = Array.isArray(data) ? data : [];
+            return advisorsState.cache;
+        } catch (err) {
+            console.error('Failed to load advisors:', err);
+            advisorsState.error = 'Unable to load advisors right now. Please try again later.';
+            return null;
+        } finally {
+            advisorsState.loading = false;
+        }
+    }
+
+    async function updateForm() {
         const type = document.getElementById('userType').value;
         const container = document.getElementById('formFields');
-        let html = '';
 
         if (type === 'student') {
-            html = `
+            container.innerHTML = '<p>Loading student form...</p>';
+            const [majors, advisors] = await Promise.all([fetchMajors(), fetchAdvisors()]);
+
+            if (majorsState.error || advisorsState.error) {
+                const errors = [majorsState.error, advisorsState.error]
+                    .filter(Boolean)
+                    .map(msg => `<p class="error">${msg}</p>`)
+                    .join('');
+                container.innerHTML = `
+                    <div class="form-group">
+                        ${errors}
+                    </div>
+                `;
+                return;
+            }
+
+            const majorOptions = (majors || []).map(major => {
+                const value = String(major.majorID || major.id || '').trim();
+                const label = String(major.name || major.title || value || 'Major').trim();
+                if (!value) {
+                    return '';
+                }
+                return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
+            }).join('');
+
+            const advisorOptions = (advisors || []).map(advisor => {
+                const value = String(advisor.advisorID || advisor.id || '').trim();
+                const label = String(advisor.name || value || 'Advisor').trim();
+                if (!value) {
+                    return '';
+                }
+                return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
+            }).join('');
+
+            container.innerHTML = `
                 <input type="hidden" name="userType" value="student">
                 <div class="form-group">
                     <label for="studentID">Student ID</label>
@@ -123,71 +229,76 @@
                     <input type="email" id="email" name="email" required>
                 </div>
                 <div class="form-group">
-                    <label for="majorID">Major ID</label>
-                    <input type="text" id="majorID" name="majorID" required>
+                    <label for="majorID">Major</label>
+                    <select id="majorID" name="majorID" required>
+                        <option value="">-- Select Major --</option>
+                        ${majorOptions}
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="advisorID">Advisor ID</label>
-                    <input type="text" id="advisorID" name="advisorID">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-            `;
-        } else if (type === 'advisor') {
-            html = `
-                <input type="hidden" name="userType" value="advisor">
-                <div class="form-group">
-                    <label for="advisorID">Advisor ID</label>
-                    <input type="text" id="advisorID" name="advisorID" required>
-                </div>
-                <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="department">Department</label>
-                    <input type="text" id="department" name="department" required>
+                    <label for="advisorID">Advisor</label>
+                    <select id="advisorID" name="advisorID">
+                        <option value="">-- Select Advisor --</option>
+                        ${advisorOptions}
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" required>
                 </div>
             `;
-        } else if (type === 'faculty') {
-            html = `
-                <input type="hidden" name="userType" value="faculty">
-                <div class="form-group">
-                    <label for="facultyID">Faculty ID</label>
-                    <input type="text" id="facultyID" name="facultyID" required>
-                </div>
-                <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="department">Department</label>
-                    <input type="text" id="department" name="department" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-            `;
-        } else {
-            html = '';
+            return;
         }
 
-        container.innerHTML = html;
+        if (type === 'advisor') {
+            container.innerHTML = `
+                <input type="hidden" name="userType" value="advisor">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required>
+                    <p class="hint">Your Advisor ID will be generated automatically after signup.</p>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="advisorPin">Advisor PIN</label>
+                    <input type="password" id="advisorPin" name="advisorPin" maxlength="4" placeholder="Enter 4-digit PIN" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+            `;
+            return;
+        }
+
+        if (type === 'faculty') {
+            container.innerHTML = `
+                <input type="hidden" name="userType" value="faculty">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required>
+                    <p class="hint">Your Faculty ID will be generated automatically after signup.</p>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="facultyPin">Faculty PIN</label>
+                    <input type="password" id="facultyPin" name="facultyPin" maxlength="4" placeholder="Enter 4-digit PIN" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = '';
     }
 
     // Optional: show success/error message dynamically
@@ -207,10 +318,13 @@
             const text = await response.text();
             if (response.ok) {
                 responseDiv.className = 'message success';
-                responseDiv.textContent = text;
+                responseDiv.textContent = text + ' Redirecting to login...';
                 form.reset();
                 document.getElementById('formFields').innerHTML = '';
                 document.getElementById('userType').value = '';
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
             } else {
                 responseDiv.className = 'message error';
                 responseDiv.textContent = text;
