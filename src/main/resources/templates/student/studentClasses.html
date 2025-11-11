@@ -10,7 +10,7 @@
             background-color: #f5f5f5;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background-color: white;
             padding: 30px;
@@ -21,6 +21,11 @@
         h1 {
             color: #14213D;
             text-align: center;
+            margin-bottom: 10px;
+        }
+        .description {
+            text-align: center;
+            color: #666;
             margin-bottom: 40px;
         }
         .back-button {
@@ -58,24 +63,88 @@
         .content {
             margin-top: 60px;
         }
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 40px;
+        .columns-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 30px;
         }
-        .nav-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            border: none;
+        .column {
+            border: 2px solid #333;
+            border-radius: 5px;
+            overflow: hidden;
+            background-color: #fff;
+        }
+        .column-header {
             background-color: #14213D;
             color: #fff;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            border-bottom: 2px solid #333;
         }
-        .nav-button:hover {
-            background-color: #0d1a2e;
+        .search-container {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        .search-container input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .course-list {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+        .course-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .course-item:hover {
+            background-color: #f0f0f0;
+        }
+        .course-code {
+            font-weight: bold;
+            color: #14213D;
+            font-size: 14px;
+        }
+        .course-title {
+            color: #333;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+        .no-courses {
+            padding: 30px 15px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+        .loading {
+            padding: 30px 15px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .error {
+            padding: 15px;
+            text-align: center;
+            color: #d32f2f;
+            font-size: 13px;
+            background-color: #ffebee;
+        }
+
+        @media (max-width: 1200px) {
+            .columns-container {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -86,7 +155,223 @@
             Logout
         </button>
         <h1>Classes</h1>
-        <p>View available classes, and class information.</p>
+        
+        <div class="content">
+            <div class="columns-container">
+                <!-- Core Classes Column -->
+                <div class="column">
+                    <div class="column-header">Core Classes</div>
+                    <div class="search-container">
+                        <input type="text" id="coreSearch" placeholder="SEARCHBAR" onkeyup="filterCourses('core')">
+                    </div>
+                    <div class="course-list" id="coreList">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Engineering Classes Column -->
+                <div class="column">
+                    <div class="column-header">Engineering Classes</div>
+                    <div class="search-container">
+                        <input type="text" id="engineeringSearch" placeholder="SEARCHBAR" onkeyup="filterCourses('engineering')">
+                    </div>
+                    <div class="course-list" id="engineeringList">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- All Classes Column -->
+                <div class="column">
+                    <div class="column-header">All Classes</div>
+                    <div class="search-container">
+                        <input type="text" id="allSearch" placeholder="SEARCHBAR" onkeyup="filterCourses('all')">
+                    </div>
+                    <div class="course-list" id="allList">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script>
+        // Data storage
+        let courseData = {
+            core: [],
+            engineering: [],
+            all: [],
+            coreFiltered: [],
+            engineeringFiltered: [],
+            allFiltered: []
+        };
+
+        // Engineering subjects to filter by
+        const engineeringSubjects = ['EE', 'ME', 'CE', 'AE', 'CHE', 'BE', 'ENG'];
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCourses();
+        });
+
+        async function loadCourses() {
+            try {
+                // Load all courses from catalog
+                const response = await fetch('/catalog?limit=500');
+                if (!response.ok) throw new Error('Failed to fetch courses');
+                
+                const courses = await response.json();
+                courseData.all = courses;
+                courseData.allFiltered = courses;
+
+                // Filter engineering courses by subject (EE, ME, CE, etc.)
+                courseData.engineering = courses.filter(course => {
+                    const subject = (course.subject || '').toUpperCase();
+                    return engineeringSubjects.includes(subject);
+                });
+                courseData.engineeringFiltered = courseData.engineering;
+
+                // Load core courses from the coreCourses collection
+                loadCoreCourses();
+
+                // Display the courses
+                displayCourses('engineering');
+                displayCourses('all');
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                document.getElementById('engineeringList').innerHTML = '<div class="error">Error loading courses</div>';
+                document.getElementById('allList').innerHTML = '<div class="error">Error loading courses</div>';
+            }
+        }
+
+        async function loadCoreCourses() {
+            try {
+                // Fetch core courses from the coreCourses collection via API
+                // For now, we'll use a workaround since we may not have a dedicated endpoint
+                // We'll fetch all courses and see if we can identify core courses
+                
+                // Try to fetch from a coreCourses endpoint if available
+                const response = await fetch('/api/coreCourses')
+                    .catch(err => {
+                        // If no dedicated endpoint, return empty array to be filled below
+                        return null;
+                    });
+
+                if (response && response.ok) {
+                    const coreCourses = await response.json();
+                    courseData.core = coreCourses;
+                    courseData.coreFiltered = coreCourses;
+                    displayCourses('core');
+                } else {
+                    // Fallback: use search to find core courses
+                    const allCourses = courseData.all;
+                    const commonCoreSubjects = ['CIS', 'MTH', 'PHY', 'CHM', 'ENG', 'COM'];
+                    courseData.core = allCourses.filter(course => {
+                        const subject = (course.subject || '').toUpperCase();
+                        return commonCoreSubjects.includes(subject);
+                    });
+                    courseData.coreFiltered = courseData.core;
+                    displayCourses('core');
+                }
+            } catch (error) {
+                console.error('Error loading core courses:', error);
+                // Show empty if there's an error
+                document.getElementById('coreList').innerHTML = '<div class="no-courses">No core courses loaded</div>';
+            }
+        }
+
+        function displayCourses(columnType) {
+            const listId = columnType + 'List';
+            const listElement = document.getElementById(listId);
+            
+            let courses = [];
+            if (columnType === 'core') {
+                courses = courseData.coreFiltered;
+            } else if (columnType === 'engineering') {
+                courses = courseData.engineeringFiltered;
+            } else if (columnType === 'all') {
+                courses = courseData.allFiltered;
+            }
+
+            if (courses.length === 0) {
+                listElement.innerHTML = '<div class="no-courses">No courses found</div>';
+                return;
+            }
+
+            let html = '';
+            courses.forEach(course => {
+                // Build course code from subject and number
+                const subject = course.subject || '';
+                const number = course.number || '';
+                const courseCode = subject && number ? `${subject} ${number}` : (course.courseID || 'N/A');
+                
+                const title = course.title || 'Untitled';
+                const courseId = course.id || course.courseID || courseCode;
+                
+                html += `
+                    <div class="course-item" onclick="viewCourseDetails('${courseId}')">
+                        <div class="course-code">${courseCode}</div>
+                        <div class="course-title">${title}</div>
+                    </div>
+                `;
+            });
+
+            listElement.innerHTML = html;
+        }
+
+        function filterCourses(columnType) {
+            const searchId = columnType + 'Search';
+            const searchValue = document.getElementById(searchId).value.toLowerCase();
+
+            let sourceArray = [];
+            if (columnType === 'core') {
+                sourceArray = courseData.core;
+            } else if (columnType === 'engineering') {
+                sourceArray = courseData.engineering;
+            } else if (columnType === 'all') {
+                sourceArray = courseData.all;
+            }
+
+            if (searchValue === '') {
+                if (columnType === 'core') {
+                    courseData.coreFiltered = courseData.core;
+                } else if (columnType === 'engineering') {
+                    courseData.engineeringFiltered = courseData.engineering;
+                } else if (columnType === 'all') {
+                    courseData.allFiltered = courseData.all;
+                }
+            } else {
+                const filtered = sourceArray.filter(course => {
+                    const subject = (course.subject || '').toLowerCase();
+                    const number = (course.number || '').toLowerCase();
+                    const title = (course.title || '').toLowerCase();
+                    const description = (course.description || '').toLowerCase();
+                    const courseCode = subject + ' ' + number;
+                    
+                    return subject.includes(searchValue) || 
+                           number.includes(searchValue) || 
+                           courseCode.includes(searchValue) ||
+                           title.includes(searchValue) || 
+                           description.includes(searchValue);
+                });
+
+                if (columnType === 'core') {
+                    courseData.coreFiltered = filtered;
+                } else if (columnType === 'engineering') {
+                    courseData.engineeringFiltered = filtered;
+                } else if (columnType === 'all') {
+                    courseData.allFiltered = filtered;
+                }
+            }
+
+            displayCourses(columnType);
+        }
+
+        function viewCourseDetails(courseId) {
+            // TODO: Implement course details view
+            // For now, just log to console
+            console.log('Viewing course details for ID:', courseId);
+            // Could redirect to a course details page or show a modal
+        }
+    </script>
 </body>
 </html>
