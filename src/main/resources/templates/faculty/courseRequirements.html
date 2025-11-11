@@ -306,8 +306,10 @@
         
         // Navigate to edit course page with selected course
         function goToEditCourse(courseName) {
-            // You can modify this URL structure based on how you want to pass the course information
-            window.location.href = '/faculty/editCourse?course=' + encodeURIComponent(courseName);
+            // Get major name from the page
+            const majorName = document.getElementById('majorName').textContent;
+            // Pass both course and major in the URL
+            window.location.href = '/faculty/editCourse?course=' + encodeURIComponent(courseName) + '&major=' + encodeURIComponent(majorName);
         }
         
         // Edit major functionality
