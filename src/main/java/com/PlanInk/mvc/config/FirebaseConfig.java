@@ -3,6 +3,9 @@ package com.PlanInk.mvc.config;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.cloud.firestore.Firestore;
+import com.google.firebase.cloud.FirestoreClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -13,11 +16,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Initializes Firebase Admin SDK.
- * Prefers GOOGLE_APPLICATION_CREDENTIALS env var,
- * falls back to a classpath resource named firebase-service-account.json.
- */
 @Configuration
 public class FirebaseConfig {
 
@@ -26,7 +24,6 @@ public class FirebaseConfig {
     @Bean
     public FirebaseApp firebaseApp() {
         try {
-            // Reuse if already initialized
             if (!FirebaseApp.getApps().isEmpty()) {
                 log.info("Firebase already initialized, reusing existing app");
                 return FirebaseApp.getInstance();
@@ -45,7 +42,7 @@ public class FirebaseConfig {
                         .getResourceAsStream("firebase-service-account.json")) {
                     if (is == null) {
                         throw new IllegalStateException(
-                            "Missing firebase-service-account.json and GOOGLE_APPLICATION_CREDENTIALS not set"
+                                "Missing firebase-service-account.json and GOOGLE_APPLICATION_CREDENTIALS not set"
                         );
                     }
                     creds = GoogleCredentials.fromStream(is);
@@ -55,7 +52,6 @@ public class FirebaseConfig {
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(creds)
-                    // RTDB URL needed for Realtime Database access
                     .setDatabaseUrl("https://degreeplanner-2e548-default-rtdb.firebaseio.com")
                     .build();
 
@@ -67,5 +63,17 @@ public class FirebaseConfig {
             log.error("❌ Failed to initialize Firebase", e);
             throw new RuntimeException("Failed to initialize Firebase", e);
         }
+    }
+
+    // 🔹 Add this: exposes FirebaseAuth as a Spring Bean
+    @Bean
+    public FirebaseAuth firebaseAuth(FirebaseApp app) {
+        return FirebaseAuth.getInstance(app);
+    }
+
+    // 🔹 Optional: expose Firestore if you plan to use it
+    @Bean
+    public Firestore firestore(FirebaseApp app) {
+        return FirestoreClient.getFirestore(app);
     }
 }
