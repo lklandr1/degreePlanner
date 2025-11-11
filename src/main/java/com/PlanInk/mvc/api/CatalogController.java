@@ -64,4 +64,20 @@ public class CatalogController {
         m.put("id", snap.getId());
         return m;
     }
+
+    // GET /coreCourses -> list core courses from coreCourses collection
+    @GetMapping("/coreCourses")
+    public List<Map<String,Object>> listCoreCourses(@RequestParam(defaultValue = "200") int limit) throws Exception {
+        Firestore db = FirestoreClient.getFirestore();
+        ApiFuture<QuerySnapshot> fut = db.collection("coreCourses").limit(limit).get();
+        List<QueryDocumentSnapshot> docs = fut.get(5, TimeUnit.SECONDS).getDocuments();
+
+        List<Map<String,Object>> out = new ArrayList<>();
+        for (QueryDocumentSnapshot d : docs) {
+            Map<String,Object> m = new HashMap<>(d.getData());
+            m.put("id", d.getId());
+            out.add(m);
+        }
+        return out;
+    }
 }
