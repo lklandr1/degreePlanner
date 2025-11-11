@@ -55,6 +55,27 @@
         .logout-button:hover {
             background-color: #c82333;
         }
+        .action-buttons {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .action-button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 500;
+            background-color: #14213D;
+            color: #fff;
+        }
+        .action-button:hover {
+            background-color: #0d1a2e;
+        }
         .content {
             margin-top: 60px;
         }
@@ -77,6 +98,104 @@
         .nav-button:hover {
             background-color: #0d1a2e;
         }
+        
+        /* Major name display */
+        .major-name {
+            color: #666;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 30px;
+        }
+        
+        /* Search bar styles */
+        .search-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .search-bar {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+        }
+        
+        .search-bar:focus {
+            outline: none;
+            border-color: #14213D;
+            background-color: white;
+        }
+        
+        /* Course list styles */
+        .courses-container {
+            margin-top: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+        }
+        
+        .course-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .course-button {
+            padding: 20px 30px;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: left;
+            border: none;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: white;
+            color: #14213D;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .course-button:last-child {
+            border-bottom: none;
+        }
+        
+        .course-button:hover {
+            background-color: #f8f9fa;
+            color: #14213D;
+        }
+        
+        .course-button:active {
+            background-color: #e9ecef;
+        }
+        
+        /* Hide courses that don't match search */
+        .course-button.hidden {
+            display: none;
+        }
+        
+        /* Course year display */
+        .course-year {
+            color: #666;
+            font-weight: normal;
+        }
+        
+        /* No results message */
+        .no-results {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -87,18 +206,122 @@
         <button class="logout-button" onclick="window.location.href='/logout'">
             Logout
         </button>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="action-button" onclick="editMajor()">
+                Edit Major
+            </button>
+        </div>
+        
         <h1>Course Requirements</h1>
-        <div class="content">
-            <p>View course requirements and prerequisites for degree programs.</p>
-            <div class="button-container">
-                <button class="nav-button" onclick="window.location.href='/faculty/editRequirements'">
-                    Edit Requirements
+        
+        <!-- Major Name Display -->
+        <div class="major-name" id="majorName">
+            Major Name
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" class="search-bar" id="searchBar" placeholder="SEARCHBAR" onkeyup="searchCourses()">
+        </div>
+        
+        <!-- Courses List -->
+        <div class="courses-container">
+            <div class="course-grid" id="courseGrid">
+                <!-- Sample courses - these will be populated from Firestore database -->
+                <button class="course-button" onclick="goToEditCourse('CIS 111 - Computer Science I')">
+                    <span>CIS 111 - Computer Science I</span>
+                    <span class="course-year">2025</span>
                 </button>
-                <button class="nav-button" onclick="window.location.href='/faculty/editCourse'">
-                    Edit Courses
+                <button class="course-button" onclick="goToEditCourse('CIS 112 - Computer Science II')">
+                    <span>CIS 112 - Computer Science II</span>
+                    <span class="course-year">2025</span>
                 </button>
+                <button class="course-button" onclick="goToEditCourse('CIS 113 - Honors Computer Science I')">
+                    <span>CIS 113 - Honors Computer Science I</span>
+                    <span class="course-year">2025</span>
+                </button>
+                <button class="course-button" onclick="goToEditCourse('CIS 211 - Computer Science I')">
+                    <span>CIS 211 - Computer Science I</span>
+                    <span class="course-year">2025</span>
+                </button>
+                <button class="course-button" onclick="goToEditCourse('CIS 212 - Data Structures')">
+                    <span>CIS 212 - Data Structures</span>
+                    <span class="course-year">2025</span>
+                </button>
+                <button class="course-button" onclick="goToEditCourse('CIS 313 - Algorithms')">
+                    <span>CIS 313 - Algorithms</span>
+                    <span class="course-year">2025</span>
+                </button>
+                <button class="course-button" onclick="goToEditCourse('CIS 314 - Computer Organization')">
+                    <span>CIS 314 - Computer Organization</span>
+                    <span class="course-year">2025</span>
+                </button>
+                <button class="course-button" onclick="goToEditCourse('CIS 415 - Operating Systems')">
+                    <span>CIS 415 - Operating Systems</span>
+                    <span class="course-year">2025</span>
+                </button>
+            </div>
+            <div class="no-results" id="noResults">
+                No courses found matching your search.
             </div>
         </div>
     </div>
+    
+    <script>
+        // Get major name from URL parameters
+        function getMajorFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const major = urlParams.get('major');
+            if (major) {
+                document.getElementById('majorName').textContent = major;
+            }
+        }
+        
+        // Search functionality
+        function searchCourses() {
+            const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+            const courseButtons = document.querySelectorAll('.course-button');
+            const noResults = document.getElementById('noResults');
+            let visibleCount = 0;
+            
+            courseButtons.forEach(button => {
+                const courseName = button.querySelector('span').textContent.toLowerCase();
+                if (courseName.includes(searchTerm)) {
+                    button.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    button.classList.add('hidden');
+                }
+            });
+            
+            // Show/hide no results message
+            if (visibleCount === 0 && searchTerm !== '') {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        }
+        
+        // Navigate to edit course page with selected course
+        function goToEditCourse(courseName) {
+            // Get major name from the page
+            const majorName = document.getElementById('majorName').textContent;
+            // Pass both course and major in the URL
+            window.location.href = '/faculty/editCourse?course=' + encodeURIComponent(courseName) + '&major=' + encodeURIComponent(majorName);
+        }
+        
+        // Edit major functionality
+        function editMajor() {
+            const majorName = document.getElementById('majorName').textContent;
+            window.location.href = '/faculty/editRequirements?major=' + encodeURIComponent(majorName);
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            getMajorFromURL();
+        });
+    </script>
 </body>
 </html>
