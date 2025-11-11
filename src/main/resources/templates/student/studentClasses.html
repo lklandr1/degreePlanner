@@ -141,8 +141,196 @@
             background-color: #ffebee;
         }
 
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #14213D;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            flex: 1;
+        }
+
+        .modal-title h2 {
+            color: #14213D;
+            margin: 0 0 5px 0;
+            font-size: 24px;
+        }
+
+        .modal-code {
+            color: #666;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #14213D;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #dc3545;
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .info-section {
+            grid-column: 1 / -1;
+        }
+
+        .info-section h3 {
+            color: #14213D;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 0 0 10px 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+
+        .info-field {
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .field-item {
+            margin-bottom: 15px;
+        }
+
+        .field-label {
+            font-weight: bold;
+            color: #14213D;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .field-value {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .field-value.not-available {
+            color: #999;
+            font-style: italic;
+        }
+
+        .description-section {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .description-section h3 {
+            color: #14213D;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 0 0 10px 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+
+        .description-text {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 3px solid #14213D;
+        }
+
+        .description-text.not-available {
+            color: #999;
+            font-style: italic;
+            border-left-color: #ddd;
+        }
+
         @media (max-width: 1200px) {
             .columns-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .modal-content {
+                width: 95%;
+                padding: 25px;
+            }
+
+            .modal-body {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .info-field {
                 grid-template-columns: 1fr;
             }
         }
@@ -188,6 +376,54 @@
                     </div>
                     <div class="course-list" id="allList">
                         <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Details Modal -->
+    <div id="courseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h2 id="modalCourseTitle">Course Title</h2>
+                    <p class="modal-code" id="modalCourseCode">SUBJ 000</p>
+                </div>
+                <button class="close-btn" onclick="closeCourseModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-field">
+                    <div class="field-item">
+                        <div class="field-label">Course Code</div>
+                        <div class="field-value" id="fieldCourseCode">N/A</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-label">Course ID</div>
+                        <div class="field-value" id="fieldCourseID">N/A</div>
+                    </div>
+                </div>
+                <div class="info-field">
+                    <div class="field-item">
+                        <div class="field-label">Credit Hours</div>
+                        <div class="field-value" id="fieldCredits">N/A</div>
+                    </div>
+                </div>
+
+                <div class="description-section">
+                    <h3>Description</h3>
+                    <div class="description-text" id="fieldDescription">No description available</div>
+                </div>
+
+                <div class="info-section" id="prereqSection" style="display: none;">
+                    <h3>Prerequisites</h3>
+                    <div class="description-text" id="fieldPrereqs">No prerequisites</div>
+                </div>
+
+                <div class="info-section" id="urlSection" style="display: none;">
+                    <h3>More Information</h3>
+                    <div class="field-value">
+                        <a id="fieldUrl" href="#" target="_blank" style="color: #14213D; text-decoration: underline;">View in course catalog</a>
                     </div>
                 </div>
             </div>
@@ -367,11 +603,88 @@
         }
 
         function viewCourseDetails(courseId) {
-            // TODO: Implement course details view
-            // For now, just log to console
-            console.log('Viewing course details for ID:', courseId);
-            // Could redirect to a course details page or show a modal
+            // Fetch the course details from the API
+            fetch(`/courses/${courseId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Course not found');
+                    return response.json();
+                })
+                .then(course => {
+                    displayCourseModal(course);
+                })
+                .catch(error => {
+                    console.error('Error fetching course details:', error);
+                    alert('Could not load course details. Please try again.');
+                });
         }
+
+        function displayCourseModal(course) {
+            // Build course code
+            const subject = course.subject || '';
+            const number = course.number || '';
+            const courseCode = subject && number ? `${subject} ${number}` : (course.courseID || 'N/A');
+
+            // Populate modal fields
+            document.getElementById('modalCourseTitle').textContent = course.title || 'Course Title';
+            document.getElementById('modalCourseCode').textContent = courseCode;
+            document.getElementById('fieldCourseCode').textContent = courseCode;
+            document.getElementById('fieldCourseID').textContent = course.courseID || course.id || 'N/A';
+            document.getElementById('fieldCredits').textContent = course.credits || 'N/A';
+
+            // Handle description
+            if (course.description) {
+                document.getElementById('fieldDescription').textContent = course.description;
+                document.getElementById('fieldDescription').classList.remove('not-available');
+            } else {
+                document.getElementById('fieldDescription').textContent = 'No description available';
+                document.getElementById('fieldDescription').classList.add('not-available');
+            }
+
+            // Handle prerequisites
+            const prereqSection = document.getElementById('prereqSection');
+            if (course.prereqs) {
+                prereqSection.style.display = 'block';
+                const prereqText = typeof course.prereqs === 'string' 
+                    ? course.prereqs 
+                    : JSON.stringify(course.prereqs);
+                document.getElementById('fieldPrereqs').textContent = prereqText;
+                document.getElementById('fieldPrereqs').classList.remove('not-available');
+            } else {
+                prereqSection.style.display = 'none';
+            }
+
+            // Handle URL
+            const urlSection = document.getElementById('urlSection');
+            if (course.url) {
+                urlSection.style.display = 'block';
+                document.getElementById('fieldUrl').href = course.url;
+            } else {
+                urlSection.style.display = 'none';
+            }
+
+            // Show modal
+            const modal = document.getElementById('courseModal');
+            modal.classList.add('show');
+
+            // Close modal when clicking outside of it
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    closeCourseModal();
+                }
+            };
+        }
+
+        function closeCourseModal() {
+            const modal = document.getElementById('courseModal');
+            modal.classList.remove('show');
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeCourseModal();
+            }
+        });
     </script>
 </body>
 </html>
