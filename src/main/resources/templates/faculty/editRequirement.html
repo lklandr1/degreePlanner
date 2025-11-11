@@ -3,26 +3,37 @@
 <head>
     <title>Edit Requirements</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
             background-color: #f5f5f5;
         }
+
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background-color: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
+
         h1 {
             color: #14213D;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
+            margin-top: 0;
         }
+
         .back-button {
             position: absolute;
             top: 20px;
@@ -35,10 +46,13 @@
             color: #fff;
             cursor: pointer;
             transition: background-color 0.3s;
+            z-index: 10;
         }
+
         .back-button:hover {
             background-color: #5a6268;
         }
+
         .logout-button {
             position: absolute;
             top: 20px;
@@ -51,12 +65,378 @@
             color: #fff;
             cursor: pointer;
             transition: background-color 0.3s;
+            z-index: 10;
         }
+
         .logout-button:hover {
             background-color: #c82333;
         }
+
         .content {
-            margin-top: 60px;
+            margin-top: 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .description {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .lists-container {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex: 1;
+            min-height: 500px;
+        }
+
+        .list-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .list-header {
+            font-weight: bold;
+            color: #14213D;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .draggable-list {
+            border: 2px solid #14213D;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #fafafa;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 400px;
+            list-style: none;
+            margin: 0;
+        }
+
+        .draggable-list li {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            cursor: move;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .draggable-list li:hover {
+            background-color: #f0f0f0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .draggable-list li.drag-over {
+            background-color: #e3f2fd;
+            border: 2px dashed #14213D;
+        }
+
+        .draggable-list li.dragging {
+            opacity: 0.5;
+            background-color: #e8e8e8;
+        }
+
+        .course-code {
+            font-weight: 600;
+            color: #14213D;
+            margin-right: 8px;
+            font-size: 12px;
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .course-title {
+            flex: 1;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .drag-handle {
+            color: #999;
+            margin-right: 8px;
+            cursor: grab;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .searchbar-container {
+            margin-bottom: 15px;
+        }
+
+        .searchbar {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .searchbar:focus {
+            outline: none;
+            border-color: #14213D;
+            box-shadow: 0 0 0 2px rgba(20, 33, 61, 0.1);
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .save-button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            background-color: #14213D;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 600;
+        }
+
+        .save-button:hover {
+            background-color: #0d1a2e;
+        }
+
+        .save-button:active {
+            transform: scale(0.98);
+        }
+
+        .cancel-button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+            background-color: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .cancel-button:hover {
+            background-color: #f5f5f5;
+            border-color: #999;
+        }
+
+        .empty-message {
+            color: #999;
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .course-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 10px;
+        }
+
+        .prereq-button {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 3px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .prereq-button:hover {
+            background-color: #0056b3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #14213D;
+            font-size: 20px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .modal-searchbar {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
+        }
+
+        .modal-searchbar:focus {
+            outline: none;
+            border-color: #14213D;
+            box-shadow: 0 0 0 2px rgba(20, 33, 61, 0.1);
+        }
+
+        .prereq-list {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .prereq-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .prereq-item:last-child {
+            border-bottom: none;
+        }
+
+        .prereq-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .prereq-item.selected {
+            background-color: #e3f2fd;
+            border-left: 4px solid #14213D;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+
+        .modal-button.confirm {
+            background-color: #14213D;
+            color: white;
+        }
+
+        .modal-button.confirm:hover {
+            background-color: #0d1a2e;
+        }
+
+        .modal-button.cancel {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        .modal-button.cancel:hover {
+            background-color: #bbb;
+        }
+
+        @media (max-width: 1024px) {
+            .lists-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .list-section {
+                min-height: 300px;
+            }
+
+            .draggable-list {
+                min-height: 250px;
+            }
         }
     </style>
 </head>
@@ -69,28 +449,521 @@
             Logout
         </button>
 
-
         <h1>
-            <div class="major-name" th:text="${majorName} + ' Requirements'">
-            Edit Requirements
+            <div class="major-name" th:text="${majorName} + ' Major Requirements'">
+                Edit Requirements
             </div>
         </h1>
 
-
         <div class="content">
-            <p>Edit degree program requirements, prerequisites, and course sequences.</p>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <div class="lists-container">
+                <!-- Left List: Core Courses -->
+                <div class="list-section">
+                    <div class="list-header">Core Courses</div>
+                    <div class="searchbar-container">
+                        <input 
+                            type="text" 
+                            class="searchbar" 
+                            id="coreSearchbar" 
+                            placeholder="Search core courses..."
+                        >
+                    </div>
+                    <ul class="draggable-list" id="coreCoursesList" data-list="core">
+                        <div class="loading">Loading courses...</div>
+                    </ul>
+                </div>
+
+                <!-- Right List: All Available Courses -->
+                <div class="list-section">
+                    <div class="list-header">Available Courses</div>
+                    <div class="searchbar-container">
+                        <input 
+                            type="text" 
+                            class="searchbar" 
+                            id="catalogSearchbar" 
+                            placeholder="Search courses by code or title..."
+                        >
+                    </div>
+                    <ul class="draggable-list" id="catalogList" data-list="catalog">
+                        <div class="loading">Loading catalog...</div>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button class="cancel-button" onclick="goBack()">Cancel</button>
+                <button class="save-button" onclick="saveRequirements()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prerequisites Modal -->
+    <div id="prereqModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Prerequisites for <span id="courseNameInModal"></span></h2>
+                <button class="close-modal" onclick="closePrereqModal()">&times;</button>
+            </div>
+            <input 
+                type="text" 
+                class="modal-searchbar" 
+                id="prereqSearchbar" 
+                placeholder="Search for prerequisite courses..."
+            >
+            <div class="prereq-list" id="prereqList"></div>
+            <div class="modal-buttons">
+                <button class="modal-button cancel" onclick="closePrereqModal()">Cancel</button>
+                <button class="modal-button confirm" onclick="confirmPrereqs()">Add Selected</button>
+            </div>
         </div>
     </div>
 
     <script>
+        const majorName = '[[${majorName}]]';
+        let allCourses = [];
+        let coreCourses = [];
+        let isModified = false;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCoreRequirements();
+            loadCatalog();
+            setupDragAndDrop();
+            setupSearchbar();
+        });
+
+        // Load core courses for the major
+        async function loadCoreRequirements() {
+            try {
+                // This would fetch from your database - adjust endpoint as needed
+                const response = await fetch(`/api/majors/requirements?major=${encodeURIComponent(majorName)}`);
+                if (response.ok) {
+                    coreCourses = await response.json();
+                    displayCoreCourses();
+                } else {
+                    // Initialize empty if endpoint doesn't exist yet
+                    coreCourses = [];
+                    displayCoreCourses();
+                }
+            } catch (error) {
+                console.warn('Could not load core requirements:', error);
+                coreCourses = [];
+                displayCoreCourses();
+            }
+        }
+
+        // Load all catalog courses
+        async function loadCatalog() {
+            try {
+                const response = await fetch('/catalog?limit=1000');
+                if (response.ok) {
+                    allCourses = await response.json();
+                    // Sort alphabetically by code or title
+                    allCourses.sort((a, b) => {
+                        const aName = (a.code || a.title || '').toLowerCase();
+                        const bName = (b.code || b.title || '').toLowerCase();
+                        return aName.localeCompare(bName);
+                    });
+                    displayCatalog();
+                } else {
+                    showError('Failed to load catalog courses');
+                }
+            } catch (error) {
+                console.error('Error loading catalog:', error);
+                showError('Error loading catalog: ' + error.message);
+            }
+        }
+
+        // Display core courses
+        function displayCoreCourses() {
+            const list = document.getElementById('coreCoursesList');
+            const searchTerm = document.getElementById('coreSearchbar').value.toLowerCase();
+
+            list.innerHTML = '';
+
+            const filteredCourses = coreCourses.filter(course => {
+                const code = (course.code || '').toLowerCase();
+                const title = (course.title || '').toLowerCase();
+                return code.includes(searchTerm) || title.includes(searchTerm);
+            });
+
+            if (filteredCourses.length === 0) {
+                if (coreCourses.length === 0) {
+                    list.innerHTML = '<div class="empty-message">No core courses added yet. Drag courses from the right to add them.</div>';
+                } else {
+                    list.innerHTML = '<div class="empty-message">No courses match your search</div>';
+                }
+                return;
+            }
+
+            filteredCourses.forEach((course, index) => {
+                const li = createCourseElement(course, 'core');
+                list.appendChild(li);
+            });
+        }
+
+        // Display catalog courses
+        function displayCatalog() {
+            const list = document.getElementById('catalogList');
+            const searchTerm = document.getElementById('catalogSearchbar').value.toLowerCase();
+
+            list.innerHTML = '';
+
+            const coreCourseIds = new Set(coreCourses.map(c => c.id));
+
+            const filteredCourses = allCourses.filter(course => {
+                // Don't show courses already in core courses
+                if (coreCourseIds.has(course.id)) {
+                    return false;
+                }
+                
+                const code = (course.code || '').toLowerCase();
+                const title = (course.title || '').toLowerCase();
+                return code.includes(searchTerm) || title.includes(searchTerm);
+            });
+
+            if (filteredCourses.length === 0) {
+                list.innerHTML = '<div class="empty-message">No courses found</div>';
+                return;
+            }
+
+            filteredCourses.forEach(course => {
+                const li = createCourseElement(course, 'catalog');
+                list.appendChild(li);
+            });
+        }
+
+        // Create a course list item element
+        function createCourseElement(course, type) {
+            const li = document.createElement('li');
+            li.draggable = true;
+            li.dataset.courseId = course.id;
+            li.dataset.courseCode = course.code;
+            li.dataset.courseTitle = course.title;
+
+            const handle = document.createElement('span');
+            handle.className = 'drag-handle';
+            handle.innerHTML = '⋮⋮';
+
+            const code = document.createElement('span');
+            code.className = 'course-code';
+            code.textContent = course.code || 'N/A';
+
+            const title = document.createElement('span');
+            title.className = 'course-title';
+            title.textContent = course.title || 'Unknown Course';
+
+            li.appendChild(handle);
+            li.appendChild(code);
+            li.appendChild(title);
+
+            // Add prereq button for core courses
+            if (type === 'core') {
+                const actions = document.createElement('div');
+                actions.className = 'course-actions';
+                
+                const prereqBtn = document.createElement('button');
+                prereqBtn.className = 'prereq-button';
+                prereqBtn.textContent = 'Add Prereqs';
+                prereqBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openPrereqModal(course);
+                };
+                
+                actions.appendChild(prereqBtn);
+                li.appendChild(actions);
+            }
+
+            // Add event listeners for drag
+            li.addEventListener('dragstart', handleDragStart);
+            li.addEventListener('dragend', handleDragEnd);
+
+            return li;
+        }
+
+        // Drag and drop handlers
+        let draggedElement = null;
+        let draggedFromList = null;
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            draggedFromList = this.parentElement.id;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.draggable-list li').forEach(li => {
+                li.classList.remove('drag-over');
+            });
+        }
+
+        function setupDragAndDrop() {
+            const lists = document.querySelectorAll('.draggable-list');
+
+            lists.forEach(list => {
+                list.addEventListener('dragover', handleDragOver);
+                list.addEventListener('drop', handleDrop);
+                list.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+
+            const li = e.target.closest('li');
+            if (li && li !== draggedElement) {
+                li.classList.add('drag-over');
+            }
+
+            return false;
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.closest('li')) {
+                e.target.closest('li').classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+
+            const list = e.target.closest('.draggable-list');
+            if (!list || !draggedElement) return;
+
+            document.querySelectorAll('.draggable-list li').forEach(li => {
+                li.classList.remove('drag-over');
+            });
+
+            const dropTarget = e.target.closest('li');
+
+            if (list.id === 'coreCoursesList') {
+                // Moving to core courses list
+                const draggedCourse = {
+                    id: draggedElement.dataset.courseId,
+                    code: draggedElement.dataset.courseCode,
+                    title: draggedElement.dataset.courseTitle
+                };
+
+                // Remove from coreCourses if it exists there already
+                coreCourses = coreCourses.filter(c => c.id !== draggedCourse.id);
+
+                if (dropTarget && list.contains(dropTarget) && dropTarget !== draggedElement) {
+                    // Insert before the drop target
+                    const targetIndex = Array.from(list.children).indexOf(dropTarget);
+                    coreCourses.splice(targetIndex, 0, draggedCourse);
+                } else {
+                    // Add to end
+                    coreCourses.push(draggedCourse);
+                }
+
+                isModified = true;
+                displayCoreCourses();
+                setupDragAndDrop();
+            } else if (list.id === 'catalogList' && draggedFromList === 'coreCoursesList') {
+                // Dragging from core courses to catalog list - remove the course
+                const courseId = draggedElement.dataset.courseId;
+                coreCourses = coreCourses.filter(c => c.id !== courseId);
+                isModified = true;
+                displayCoreCourses();
+                setupDragAndDrop();
+            }
+
+            return false;
+        }
+
+        // Search functionality
+        function setupSearchbar() {
+            const coreSearchbar = document.getElementById('coreSearchbar');
+            const catalogSearchbar = document.getElementById('catalogSearchbar');
+
+            coreSearchbar.addEventListener('input', function() {
+                displayCoreCourses();
+            });
+
+            catalogSearchbar.addEventListener('input', function() {
+                displayCatalog();
+            });
+        }
+
+        // Save requirements
+        async function saveRequirements() {
+            try {
+                const payload = {
+                    major: majorName,
+                    coreCourses: coreCourses.map((course, index) => ({
+                        id: course.id,
+                        code: course.code,
+                        title: course.title,
+                        order: index,
+                        prerequisite: index > 0 ? coreCourses[index - 1].id : null
+                    }))
+                };
+
+                const response = await fetch('/api/majors/requirements', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    isModified = false;
+                    showSuccess('Requirements saved successfully!');
+                    setTimeout(() => {
+                        goBack();
+                    }, 1500);
+                } else {
+                    showError('Failed to save requirements: ' + response.statusText);
+                }
+            } catch (error) {
+                console.error('Error saving requirements:', error);
+                showError('Error saving requirements: ' + error.message);
+            }
+        }
+
+        // Utility functions
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+
         function goBack() {
-            const majorName = '[[${majorName}]]'; // Thymeleaf syntax to get the major name
             if (majorName && majorName !== 'Major') {
                 window.location.href = '/faculty/courseRequirements?major=' + encodeURIComponent(majorName);
             } else {
                 window.location.href = '/faculty/courseRequirements';
             }
         }
+
+        // Prerequisite Modal Functions
+        let currentCourseForPrereq = null;
+        let selectedPrerequisites = new Set();
+
+        function openPrereqModal(course) {
+            currentCourseForPrereq = course;
+            selectedPrerequisites.clear();
+            
+            // Load existing prereqs if any
+            if (course.prerequisites && Array.isArray(course.prerequisites)) {
+                course.prerequisites.forEach(prereq => {
+                    selectedPrerequisites.add(prereq.id || prereq);
+                });
+            }
+
+            document.getElementById('courseNameInModal').textContent = `${course.code} - ${course.title}`;
+            document.getElementById('prereqSearchbar').value = '';
+            displayPrereqList('');
+            document.getElementById('prereqModal').style.display = 'block';
+        }
+
+        function closePrereqModal() {
+            document.getElementById('prereqModal').style.display = 'none';
+            currentCourseForPrereq = null;
+            selectedPrerequisites.clear();
+        }
+
+        function displayPrereqList(searchTerm) {
+            const list = document.getElementById('prereqList');
+            list.innerHTML = '';
+
+            const searchLower = searchTerm.toLowerCase();
+            
+            // Show all courses except the current course being edited
+            const availableCourses = allCourses.filter(course => {
+                if (currentCourseForPrereq && course.id === currentCourseForPrereq.id) {
+                    return false; // Can't be a prereq for itself
+                }
+                const code = (course.code || '').toLowerCase();
+                const title = (course.title || '').toLowerCase();
+                return code.includes(searchLower) || title.includes(searchLower);
+            });
+
+            if (availableCourses.length === 0) {
+                list.innerHTML = '<div style="padding: 15px; text-align: center; color: #999;">No courses found</div>';
+                return;
+            }
+
+            availableCourses.forEach(course => {
+                const div = document.createElement('div');
+                div.className = 'prereq-item';
+                if (selectedPrerequisites.has(course.id)) {
+                    div.classList.add('selected');
+                }
+                div.innerHTML = `<strong>${course.code}</strong> - ${course.title}`;
+                div.onclick = () => togglePrereqSelection(course.id);
+                list.appendChild(div);
+            });
+        }
+
+        function togglePrereqSelection(courseId) {
+            if (selectedPrerequisites.has(courseId)) {
+                selectedPrerequisites.delete(courseId);
+            } else {
+                selectedPrerequisites.add(courseId);
+            }
+            displayPrereqList(document.getElementById('prereqSearchbar').value);
+        }
+
+        function confirmPrereqs() {
+            if (!currentCourseForPrereq) return;
+
+            // Update the course object with selected prerequisites
+            const prereqArray = Array.from(selectedPrerequisites).map(id => {
+                const course = allCourses.find(c => c.id === id);
+                return {
+                    id: id,
+                    code: course.code,
+                    title: course.title
+                };
+            });
+
+            currentCourseForPrereq.prerequisites = prereqArray;
+            isModified = true;
+            closePrereqModal();
+            showSuccess(`Prerequisites updated for ${currentCourseForPrereq.code}`);
+        }
+
+        // Setup search for prereq modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const prereqSearchbar = document.getElementById('prereqSearchbar');
+            if (prereqSearchbar) {
+                prereqSearchbar.addEventListener('input', function() {
+                    displayPrereqList(this.value);
+                });
+            }
+
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('prereqModal');
+                if (event.target === modal) {
+                    closePrereqModal();
+                }
+            });
+        });
     </script>
 </body>
 </html>
