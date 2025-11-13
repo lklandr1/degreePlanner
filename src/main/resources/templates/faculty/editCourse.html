@@ -58,6 +58,275 @@
         .content {
             margin-top: 60px;
         }
+
+        /* Form Styles */
+        .course-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            color: #14213D;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #14213D;
+            box-shadow: 0 0 0 2px rgba(20, 33, 61, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-save {
+            background-color: #14213D;
+            color: #fff;
+        }
+
+        .btn-save:hover {
+            background-color: #0d1a2e;
+        }
+
+        .btn-cancel {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background-color: #bbb;
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .info-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #14213D;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            color: #333;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .changelog-modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .changelog-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .changelog-modal-header h2 {
+            margin: 0;
+            color: #14213D;
+            font-size: 22px;
+        }
+
+        .close-changelog-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-changelog-modal:hover {
+            color: #333;
+        }
+
+        .changelog-form-group {
+            margin-bottom: 20px;
+        }
+
+        .changelog-form-group label {
+            display: block;
+            font-weight: bold;
+            color: #14213D;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .changelog-form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .changelog-form-group textarea:focus {
+            outline: none;
+            border-color: #14213D;
+            box-shadow: 0 0 0 2px rgba(20, 33, 61, 0.1);
+        }
+
+        .changelog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .changelog-button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+
+        .changelog-button.submit {
+            background-color: #14213D;
+            color: white;
+        }
+
+        .changelog-button.submit:hover {
+            background-color: #0d1a2e;
+        }
+
+        .changelog-button.cancel {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        .changelog-button.cancel:hover {
+            background-color: #bbb;
+        }
+
+        .change-summary {
+            background-color: #f0f8ff;
+            border-left: 4px solid #14213D;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .change-summary strong {
+            display: block;
+            color: #14213D;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -69,39 +338,301 @@
             Logout
         </button>
 
-
-
         <h1>        
             <div class="course-name" id="courseName" th:text="'Edit ' + ${courseName}">
             Edit Course
             </div>
         </h1>
 
-
-
         <div class="content">
-            <p>Edit individual course details, prerequisites, descriptions, and scheduling information, etc.</p>
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <div class="info-box">
+                <strong>Course Editing:</strong> Make changes to the course information below. When you save, you'll be asked to provide notes explaining the changes made.
+            </div>
+
+            <form class="course-form" id="courseForm">
+                <div class="form-group">
+                    <label for="courseCode">Course Code *</label>
+                    <input type="text" id="courseCode" name="courseCode" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="courseTitle">Course Title *</label>
+                    <input type="text" id="courseTitle" name="courseTitle" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="credits">Credits *</label>
+                        <input type="number" id="credits" name="credits" min="0" max="12" step="0.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="semester">Typical Semester</label>
+                        <select id="semester" name="semester">
+                            <option value="">-- Select --</option>
+                            <option value="Fall">Fall</option>
+                            <option value="Spring">Spring</option>
+                            <option value="Summer">Summer</option>
+                            <option value="Fall/Spring">Fall/Spring</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Course Description</label>
+                    <textarea id="description" name="description" placeholder="Enter course description..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="prerequisites">Prerequisites</label>
+                    <textarea id="prerequisites" name="prerequisites" placeholder="Enter prerequisites (e.g., CS101, MATH101)..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="outcomes">Learning Outcomes</label>
+                    <textarea id="outcomes" name="outcomes" placeholder="Enter learning outcomes..."></textarea>
+                </div>
+
+                <div class="button-container">
+                    <button type="button" class="btn btn-cancel" onclick="goBack()">Cancel</button>
+                    <button type="button" class="btn btn-save" onclick="handleSaveClick()">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 
+    <!-- Changelog Modal -->
+    <div id="changelogModal" class="modal">
+        <div class="changelog-modal-content">
+            <div class="changelog-modal-header">
+                <h2>Record Changes</h2>
+                <button class="close-changelog-modal" onclick="closeChangelogModal()">&times;</button>
+            </div>
+            
+            <div class="change-summary" id="changeSummary"></div>
+            
+            <form id="changelogForm" onsubmit="submitChangelog(event)">
+                <div class="changelog-form-group">
+                    <label for="changeNotes">Notes (Required)</label>
+                    <textarea 
+                        id="changeNotes" 
+                        name="notes" 
+                        placeholder="Please explain the changes you made and why..." 
+                        required>
+                    </textarea>
+                </div>
+                
+                <div class="changelog-buttons">
+                    <button type="button" class="changelog-button cancel" onclick="closeChangelogModal()">Cancel</button>
+                    <button type="submit" class="changelog-button submit">Record & Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
-        function editCourse() {
-            const courseNameElement = document.getElementById('courseName');
-            const fullText = courseNameElement.textContent.trim();
-            const courseTitle = fullText.replace('Edit ', '');
-            window.location.href = '/faculty/editCourse?course=' + encodeURIComponent(courseTitle);
+        const courseName = '[[${courseName}]]';
+        let originalCourseData = {};
+        let currentCourseData = {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCourseData();
+        });
+
+        // Load course data (placeholder - would fetch from API in real scenario)
+        function loadCourseData() {
+            // Initialize form with current course data
+            originalCourseData = {
+                code: courseName.split(' - ')[0] || courseName,
+                title: courseName.split(' - ')[1] || courseName,
+                credits: '3',
+                semester: 'Fall',
+                description: '',
+                prerequisites: '',
+                outcomes: ''
+            };
+
+            // Populate form
+            document.getElementById('courseCode').value = originalCourseData.code;
+            document.getElementById('courseTitle').value = originalCourseData.title;
+            document.getElementById('credits').value = originalCourseData.credits;
+            document.getElementById('semester').value = originalCourseData.semester;
+            document.getElementById('description').value = originalCourseData.description;
+            document.getElementById('prerequisites').value = originalCourseData.prerequisites;
+            document.getElementById('outcomes').value = originalCourseData.outcomes;
+
+            // Save initial state
+            saveCurrentState();
         }
 
+        // Save current form state
+        function saveCurrentState() {
+            currentCourseData = {
+                code: document.getElementById('courseCode').value,
+                title: document.getElementById('courseTitle').value,
+                credits: document.getElementById('credits').value,
+                semester: document.getElementById('semester').value,
+                description: document.getElementById('description').value,
+                prerequisites: document.getElementById('prerequisites').value,
+                outcomes: document.getElementById('outcomes').value
+            };
+        }
+
+        // Check for changes
+        function hasChanges() {
+            const current = {
+                code: document.getElementById('courseCode').value,
+                title: document.getElementById('courseTitle').value,
+                credits: document.getElementById('credits').value,
+                semester: document.getElementById('semester').value,
+                description: document.getElementById('description').value,
+                prerequisites: document.getElementById('prerequisites').value,
+                outcomes: document.getElementById('outcomes').value
+            };
+
+            return JSON.stringify(originalCourseData) !== JSON.stringify(current);
+        }
+
+        // Generate change summary
+        function generateChangeSummary() {
+            const current = {
+                code: document.getElementById('courseCode').value,
+                title: document.getElementById('courseTitle').value,
+                credits: document.getElementById('credits').value,
+                semester: document.getElementById('semester').value,
+                description: document.getElementById('description').value,
+                prerequisites: document.getElementById('prerequisites').value,
+                outcomes: document.getElementById('outcomes').value
+            };
+
+            let changes = [];
+
+            if (originalCourseData.code !== current.code) {
+                changes.push(`Changed course code from "${originalCourseData.code}" to "${current.code}"`);
+            }
+            if (originalCourseData.title !== current.title) {
+                changes.push(`Changed title from "${originalCourseData.title}" to "${current.title}"`);
+            }
+            if (originalCourseData.credits !== current.credits) {
+                changes.push(`Changed credits from ${originalCourseData.credits} to ${current.credits}`);
+            }
+            if (originalCourseData.semester !== current.semester) {
+                changes.push(`Changed semester from "${originalCourseData.semester}" to "${current.semester}"`);
+            }
+            if (originalCourseData.description !== current.description) {
+                changes.push(`Updated course description`);
+            }
+            if (originalCourseData.prerequisites !== current.prerequisites) {
+                changes.push(`Updated prerequisites`);
+            }
+            if (originalCourseData.outcomes !== current.outcomes) {
+                changes.push(`Updated learning outcomes`);
+            }
+
+            return changes.length > 0 ? changes.join(' | ') : 'No changes detected';
+        }
+
+        // Handle save click
+        function handleSaveClick() {
+            if (!hasChanges()) {
+                showSuccess('No changes made');
+                setTimeout(() => goBack(), 1500);
+                return;
+            }
+            openChangelogModal();
+        }
+
+        // Open changelog modal
+        function openChangelogModal() {
+            const summary = generateChangeSummary();
+            document.getElementById('changeSummary').innerHTML = `<strong>Summary of Changes:</strong><br>${summary}`;
+            document.getElementById('changelogModal').style.display = 'block';
+            document.getElementById('changeNotes').focus();
+        }
+
+        // Close changelog modal
+        function closeChangelogModal() {
+            document.getElementById('changelogModal').style.display = 'none';
+            document.getElementById('changelogForm').reset();
+        }
+
+        // Submit changelog
+        async function submitChangelog(event) {
+            event.preventDefault();
+            
+            const notes = document.getElementById('changeNotes').value.trim();
+            
+            if (!notes) {
+                showError('Please provide notes for this change');
+                return;
+            }
+
+            try {
+                // Generate description
+                const description = generateChangeSummary();
+                
+                // Record the changelog entry
+                const changelogPayload = {
+                    changeType: 'course',
+                    description: description,
+                    notes: notes,
+                    facultyEmail: 'faculty@university.edu' // TODO: Replace with actual user email from session
+                };
+
+                const changelogResponse = await fetch('/api/changelog/record', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(changelogPayload)
+                });
+
+                if (!changelogResponse.ok) {
+                    throw new Error('Failed to record changelog');
+                }
+
+                const result = await changelogResponse.json();
+                
+                showSuccess('Course updated and changes recorded successfully!');
+                closeChangelogModal();
+                
+                setTimeout(() => {
+                    goBack();
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error submitting changelog:', error);
+                showError('Error recording changes: ' + error.message);
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+
+        // Go back function
         function goBack() {
-            // Get major from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const majorName = urlParams.get('major');
             
             if (majorName) {
                 window.location.href = '/faculty/courseRequirements?major=' + encodeURIComponent(majorName);
             } else {
-                // Fallback to sessionStorage if URL parameter is missing
                 const storedMajor = sessionStorage.getItem('currentMajor');
                 if (storedMajor) {
                     window.location.href = '/faculty/courseRequirements?major=' + encodeURIComponent(storedMajor);
@@ -111,11 +642,19 @@
             }
         }
 
-        // Store major name when page loads (if available) for fallback
+        // Store major name when page loads
         document.addEventListener('DOMContentLoaded', function() {
             const majorName = '[[${majorName}]]';
             if (majorName && majorName !== '' && majorName !== 'null') {
                 sessionStorage.setItem('currentMajor', majorName);
+            }
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('changelogModal');
+            if (event.target === modal) {
+                closeChangelogModal();
             }
         });
     </script>

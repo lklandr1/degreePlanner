@@ -44,4 +44,9 @@ public class FacultyController {
         }
         return "faculty/editCourse";
     }
+
+    @GetMapping("/faculty/changelog")
+    public String changelog() {
+        return "faculty/changelog";
+    }
 }
