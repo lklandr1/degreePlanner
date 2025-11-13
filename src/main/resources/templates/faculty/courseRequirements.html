@@ -315,28 +315,44 @@
         async function loadMajorRequirements(majorName) {
             try {
                 console.log('Loading requirements for major:', majorName);
-                const response = await fetch('/api/majors');
-                if (!response.ok) {
-                    throw new Error('Failed to load major requirements.');
+                
+                // First, fetch the major to get the requirementsRef
+                const majorsResponse = await fetch('/api/majors');
+                if (!majorsResponse.ok) {
+                    throw new Error('Failed to load majors.');
                 }
 
-                const majors = await response.json();
+                const majors = await majorsResponse.json();
                 console.log('All majors:', majors);
                 
                 // Find the specific major by name
-                if (Array.isArray(majors)) {
-                    const foundMajor = majors.find(m => m.name === majorName || m.id === majorName);
-                    if (foundMajor) {
-                        majorData = foundMajor;
-                        console.log('Found major:', majorData);
-                        console.log('Major fields:', Object.keys(majorData));
-                        renderTabs();
-                    } else {
-                        console.error('Major not found:', majorName);
-                        console.log('Available majors:', majors.map(m => ({ name: m.name, id: m.id })));
-                    }
+                const foundMajor = majors.find(m => m.name === majorName || m.id === majorName);
+                if (!foundMajor) {
+                    console.error('Major not found:', majorName);
+                    return;
+                }
+
+                majorData = foundMajor;
+                console.log('Found major:', majorData);
+                
+                // Use requirementsRef to fetch from requirements collection
+                const requirementsRef = majorData.requirementsRef;
+                if (!requirementsRef) {
+                    console.error('No requirementsRef found in major');
+                    renderTabs();
+                    return;
+                }
+
+                // Fetch from requirements collection using the requirementsRef as document ID
+                const requirementsResponse = await fetch(`/api/requirements/${requirementsRef}`);
+                if (requirementsResponse.ok) {
+                    const requirementsData = await requirementsResponse.json();
+                    console.log('Requirements data:', requirementsData);
+                    majorData.requirementsData = requirementsData;
+                    renderTabs();
                 } else {
-                    console.error('Unexpected response format:', majors);
+                    console.warn('Could not load requirements data, using major data only');
+                    renderTabs();
                 }
             } catch (error) {
                 console.error('Failed to fetch major data:', error);
@@ -357,82 +373,52 @@
             const tabs = [];
             const contents = [];
 
-            // Helper function to get courses from either flat array or nested structure
-            function getCourses(data) {
-                if (Array.isArray(data)) {
-                    return data;
-                } else if (data && Array.isArray(data.courses)) {
-                    return data.courses;
-                }
-                return [];
-            }
-
-            // Check for reqs/coreCourses
+            // Add Required Courses tab (from major's reqs.courses)
             const requiredCourses = majorData.reqs?.courses || majorData.coreCourses || [];
             console.log('Required courses:', requiredCourses);
 
-            if (requiredCourses.length > 0 || true) { // Always show tab even if empty
-                const requiredTab = document.createElement('button');
-                requiredTab.className = 'tab-button active';
-                requiredTab.textContent = 'Required Courses';
-                requiredTab.onclick = () => switchTab('required');
-                tabs.push(requiredTab);
+            const requiredTab = document.createElement('button');
+            requiredTab.className = 'tab-button active';
+            requiredTab.textContent = 'Required Courses';
+            requiredTab.onclick = () => switchTab('required');
+            tabs.push(requiredTab);
 
-                const requiredContent = document.createElement('div');
-                requiredContent.id = 'required-content';
-                requiredContent.className = 'tab-content active';
-                const requiredGrid = document.createElement('div');
-                requiredGrid.className = 'course-grid';
+            const requiredContent = document.createElement('div');
+            requiredContent.id = 'required-content';
+            requiredContent.className = 'tab-content active';
+            const requiredGrid = document.createElement('div');
+            requiredGrid.className = 'course-grid';
 
-                // Populate required courses
-                requiredCourses.forEach(courseId => {
-                    const button = document.createElement('button');
-                    button.className = 'course-button';
-                    button.onclick = () => goToEditCourse(courseId);
-                    button.innerHTML = `<span>${courseId}</span><span class="course-year">2025</span>`;
-                    requiredGrid.appendChild(button);
-                });
+            // Populate required courses
+            requiredCourses.forEach(courseId => {
+                const button = document.createElement('button');
+                button.className = 'course-button';
+                button.onclick = () => goToEditCourse(courseId);
+                button.innerHTML = `<span>${courseId}</span><span class="course-year">2025</span>`;
+                requiredGrid.appendChild(button);
+            });
 
-                if (requiredGrid.children.length === 0) {
-                    const noCoursesMsg = document.createElement('div');
-                    noCoursesMsg.style.cssText = 'text-align: center; padding: 40px; color: #666;';
-                    noCoursesMsg.textContent = 'No required courses defined.';
-                    requiredGrid.appendChild(noCoursesMsg);
-                }
-
-                requiredContent.appendChild(requiredGrid);
-                contents.push(requiredContent);
+            if (requiredGrid.children.length === 0) {
+                const noCoursesMsg = document.createElement('div');
+                noCoursesMsg.style.cssText = 'text-align: center; padding: 40px; color: #666;';
+                noCoursesMsg.textContent = 'No required courses defined.';
+                requiredGrid.appendChild(noCoursesMsg);
             }
 
-            // Check for oneofs nested inside reqs
-            let electives = majorData.reqs?.oneofs;
-            console.log('Checking for oneofs in reqs:', electives);
-            
-            // Fall back to csci300PlusElectives if oneofs doesn't exist
-            if (!electives || electives.length === 0) {
-                if (majorData.csci300PlusElectives && Array.isArray(majorData.csci300PlusElectives)) {
-                    electives = [{
-                        title: 'CSCI 300+ Electives',
-                        from: majorData.csci300PlusElectives
-                    }];
-                    console.log('Using csci300PlusElectives as single elective group');
-                } else {
-                    electives = [];
-                }
-            }
-            console.log('Final electives to display:', electives);
+            requiredContent.appendChild(requiredGrid);
+            contents.push(requiredContent);
 
-            // Add Elective tabs - using the title from each oneof group
-            if (Array.isArray(electives)) {
-                electives.forEach((oneofGroup, index) => {
-                    // Handle both structured objects and flat arrays
-                    if (typeof oneofGroup === 'object' && oneofGroup !== null && !Array.isArray(oneofGroup)) {
-                        // This is an object with title, from, pick properties
+            // Add elective tabs from requirements collection
+            if (majorData.requirementsData && majorData.requirementsData.groups && Array.isArray(majorData.requirementsData.groups)) {
+                console.log('Groups:', majorData.requirementsData.groups);
+                
+                majorData.requirementsData.groups.forEach((group, index) => {
+                    if (typeof group === 'object' && group !== null) {
                         const electiveTab = document.createElement('button');
                         electiveTab.className = 'tab-button';
                         
-                        const electiveTitle = oneofGroup.title || `Elective ${index + 1}`;
-                        electiveTab.textContent = electiveTitle;
+                        const groupTitle = group.title || `Elective ${index + 1}`;
+                        electiveTab.textContent = groupTitle;
                         electiveTab.onclick = () => switchTab(`elective-${index}`);
                         tabs.push(electiveTab);
 
@@ -442,12 +428,12 @@
                         const electiveGrid = document.createElement('div');
                         electiveGrid.className = 'course-grid';
 
-                        // Get courses from the 'from' array
-                        const electiveCourses = oneofGroup.from || [];
-                        console.log(`Oneof ${index} (${electiveTitle}) courses:`, electiveCourses);
+                        // Get courses from the group
+                        const groupCourses = group.courses || [];
+                        console.log(`Group ${index} (${groupTitle}) courses:`, groupCourses);
 
                         // Populate elective courses
-                        electiveCourses.forEach(courseId => {
+                        groupCourses.forEach(courseId => {
                             const button = document.createElement('button');
                             button.className = 'course-button';
                             button.onclick = () => goToEditCourse(courseId);
@@ -458,40 +444,16 @@
                         if (electiveGrid.children.length === 0) {
                             const noCoursesMsg = document.createElement('div');
                             noCoursesMsg.style.cssText = 'text-align: center; padding: 40px; color: #666;';
-                            noCoursesMsg.textContent = 'No electives defined.';
+                            noCoursesMsg.textContent = 'No courses in this group.';
                             electiveGrid.appendChild(noCoursesMsg);
                         }
 
                         electiveContent.appendChild(electiveGrid);
                         contents.push(electiveContent);
-                    } else if (Array.isArray(oneofGroup)) {
-                        // This is a flat array of course IDs - create a generic tab
-                        const electiveTab = document.createElement('button');
-                        electiveTab.className = 'tab-button';
-                        
-                        const electiveTitle = `Elective ${index + 1}`;
-                        electiveTab.textContent = electiveTitle;
-                        electiveTab.onclick = () => switchTab(`elective-${index}`);
-                        tabs.push(electiveTab);
-
-                        const electiveContent = document.createElement('div');
-                        electiveContent.id = `elective-${index}-content`;
-                        electiveContent.className = 'tab-content';
-                        const electiveGrid = document.createElement('div');
-                        electiveGrid.className = 'course-grid';
-
-                        oneofGroup.forEach(courseId => {
-                            const button = document.createElement('button');
-                            button.className = 'course-button';
-                            button.onclick = () => goToEditCourse(courseId);
-                            button.innerHTML = `<span>${courseId}</span><span class="course-year">2025</span>`;
-                            electiveGrid.appendChild(button);
-                        });
-
-                        electiveContent.appendChild(electiveGrid);
-                        contents.push(electiveContent);
                     }
                 });
+            } else {
+                console.warn('No groups found in requirements data');
             }
 
             // Add tabs and content to the DOM
