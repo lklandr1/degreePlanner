@@ -1,0 +1,18 @@
+# Local Development Properties
+# 
+# SETUP INSTRUCTIONS:
+# 1. Copy this file to application-local.properties:
+#    cp application-local.properties.example application-local.properties
+#
+# 2. Replace YOUR_FIREBASE_WEB_API_KEY_HERE with your actual Firebase Web API Key
+#    Get it from: Firebase Console > Project Settings > General > Your apps > Web API Key
+#
+# 3. This file is git-ignored, so your API key won't be committed to the repository
+#
+# 4. Spring Boot will automatically load this file if it exists (via LocalPropertiesConfig)
+#    No additional configuration needed - just create the file and it will be loaded automatically.
+#
+# Firebase Web API Key
+# Note: No quotes needed - just paste your API key directly
+firebase.api-key=YOUR_FIREBASE_WEB_API_KEY_HERE
+
