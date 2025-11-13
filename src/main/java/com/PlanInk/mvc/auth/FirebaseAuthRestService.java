@@ -1,6 +1,7 @@
 package com.PlanInk.mvc.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -21,12 +22,20 @@ public class FirebaseAuthRestService {
     private final RestTemplate restTemplate;
     private final String apiKey;
 
-    public FirebaseAuthRestService() {
+    public FirebaseAuthRestService(@Value("${firebase.api-key:}") String apiKeyFromProperties) {
         this.restTemplate = new RestTemplate();
-        String key = System.getenv("FIREBASE_API_KEY");
+        
+        // Try properties first, then fall back to environment variable
+        String key = apiKeyFromProperties != null && !apiKeyFromProperties.isBlank() 
+                ? apiKeyFromProperties 
+                : System.getenv("FIREBASE_API_KEY");
+        
         if (key == null || key.isBlank()) {
             throw new IllegalStateException(
-                    "Missing Firebase Web API key. Set FIREBASE_API_KEY environment variable.");
+                    "Missing Firebase Web API key. " +
+                    "Set firebase.api-key in application-local.properties " +
+                    "or set FIREBASE_API_KEY environment variable. " +
+                    "See application-local.properties.example for setup instructions.");
         }
         this.apiKey = key;
     }
