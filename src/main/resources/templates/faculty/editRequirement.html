@@ -424,6 +424,141 @@
             background-color: #bbb;
         }
 
+        /* Changelog Modal Styles */
+        .changelog-modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .changelog-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .changelog-modal-header h2 {
+            margin: 0;
+            color: #14213D;
+            font-size: 22px;
+        }
+
+        .close-changelog-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-changelog-modal:hover {
+            color: #333;
+        }
+
+        .changelog-form-group {
+            margin-bottom: 20px;
+        }
+
+        .changelog-form-group label {
+            display: block;
+            font-weight: bold;
+            color: #14213D;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .changelog-form-group input,
+        .changelog-form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .changelog-form-group input:focus,
+        .changelog-form-group textarea:focus {
+            outline: none;
+            border-color: #14213D;
+            box-shadow: 0 0 0 2px rgba(20, 33, 61, 0.1);
+        }
+
+        .changelog-form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .changelog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .changelog-button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+
+        .changelog-button.submit {
+            background-color: #14213D;
+            color: white;
+        }
+
+        .changelog-button.submit:hover {
+            background-color: #0d1a2e;
+        }
+
+        .changelog-button.cancel {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        .changelog-button.cancel:hover {
+            background-color: #bbb;
+        }
+
+        .change-summary {
+            background-color: #f0f8ff;
+            border-left: 4px solid #14213D;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .change-summary strong {
+            display: block;
+            color: #14213D;
+            margin-bottom: 5px;
+        }
+
         @media (max-width: 1024px) {
             .lists-container {
                 flex-direction: column;
@@ -496,8 +631,37 @@
 
             <div class="button-container">
                 <button class="cancel-button" onclick="goBack()">Cancel</button>
-                <button class="save-button" onclick="saveRequirements()">Save Changes</button>
+                <button class="save-button" onclick="handleSaveClick()">Save Changes</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Changelog Modal -->
+    <div id="changelogModal" class="modal">
+        <div class="changelog-modal-content">
+            <div class="changelog-modal-header">
+                <h2>Record Changes</h2>
+                <button class="close-changelog-modal" onclick="closeChangelogModal()">&times;</button>
+            </div>
+            
+            <div class="change-summary" id="changeSummary"></div>
+            
+            <form id="changelogForm" onsubmit="submitChangelog(event)">
+                <div class="changelog-form-group">
+                    <label for="changeNotes">Notes (Required)</label>
+                    <textarea 
+                        id="changeNotes" 
+                        name="notes" 
+                        placeholder="Please explain the changes you made and why..." 
+                        required>
+                    </textarea>
+                </div>
+                
+                <div class="changelog-buttons">
+                    <button type="button" class="changelog-button cancel" onclick="closeChangelogModal()">Cancel</button>
+                    <button type="submit" class="changelog-button submit">Record & Save</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -543,15 +707,19 @@
                 const response = await fetch(`/api/majors/requirements?major=${encodeURIComponent(majorName)}`);
                 if (response.ok) {
                     coreCourses = await response.json();
+                    // Save original state for changelog comparison
+                    originalCoreCourses = JSON.parse(JSON.stringify(coreCourses));
                     displayCoreCourses();
                 } else {
                     // Initialize empty if endpoint doesn't exist yet
                     coreCourses = [];
+                    originalCoreCourses = [];
                     displayCoreCourses();
                 }
             } catch (error) {
                 console.warn('Could not load core requirements:', error);
                 coreCourses = [];
+                originalCoreCourses = [];
                 displayCoreCourses();
             }
         }
@@ -796,6 +964,100 @@
             catalogSearchbar.addEventListener('input', function() {
                 displayCatalog();
             });
+        }
+
+        // Track original state for changelog
+        let originalCoreCourses = [];
+
+        // Changelog Management
+        function handleSaveClick() {
+            if (!isModified) {
+                goBack();
+                return;
+            }
+            openChangelogModal();
+        }
+
+        function openChangelogModal() {
+            // Generate a summary of changes
+            const summary = generateChangeSummary();
+            document.getElementById('changeSummary').innerHTML = summary;
+            document.getElementById('changelogModal').style.display = 'block';
+            document.getElementById('changeNotes').focus();
+        }
+
+        function closeChangelogModal() {
+            document.getElementById('changelogModal').style.display = 'none';
+            document.getElementById('changelogForm').reset();
+        }
+
+        function generateChangeSummary() {
+            let summary = '<strong>Summary of Changes:</strong><br>';
+            
+            const currentCourseIds = new Set(coreCourses.map(c => c.id));
+            const originalCourseIds = new Set(originalCoreCourses.map(c => c.id));
+            
+            const added = coreCourses.filter(c => !originalCourseIds.has(c.id));
+            const removed = originalCoreCourses.filter(c => !currentCourseIds.has(c.id));
+            const reordered = coreCourses.length > 0 && originalCoreCourses.length > 0 && 
+                            JSON.stringify(coreCourses.map(c => c.id)) !== 
+                            JSON.stringify(originalCoreCourses.map(c => c.id));
+
+            if (added.length > 0) {
+                summary += `<br>✓ Added ${added.length} course(s): ${added.map(c => c.code).join(', ')}`;
+            }
+            if (removed.length > 0) {
+                summary += `<br>✗ Removed ${removed.length} course(s): ${removed.map(c => c.code).join(', ')}`;
+            }
+            if (reordered && added.length === 0 && removed.length === 0) {
+                summary += `<br>↻ Reordered courses`;
+            }
+            
+            return summary;
+        }
+
+        async function submitChangelog(event) {
+            event.preventDefault();
+            
+            const notes = document.getElementById('changeNotes').value.trim();
+            
+            if (!notes) {
+                showError('Please provide notes for this change');
+                return;
+            }
+
+            try {
+                // Generate description based on changes
+                const description = generateChangeSummary().replace(/<br>/g, ' | ').replace(/<strong>|<\/strong>/g, '').trim();
+                
+                // Record the changelog entry
+                const changelogPayload = {
+                    changeType: 'major',
+                    description: description,
+                    notes: notes,
+                    facultyEmail: 'faculty@university.edu' // TODO: Replace with actual user email from session
+                };
+
+                const changelogResponse = await fetch('/api/changelog/record', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(changelogPayload)
+                });
+
+                if (!changelogResponse.ok) {
+                    throw new Error('Failed to record changelog');
+                }
+
+                // Now save the requirements
+                await saveRequirements();
+                
+                closeChangelogModal();
+            } catch (error) {
+                console.error('Error submitting changelog:', error);
+                showError('Error recording changes: ' + error.message);
+            }
         }
 
         // Save requirements

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Changelog</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        h1 {
+            color: #14213D;
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 0;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #6c757d;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            z-index: 10;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #dc3545;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            z-index: 10;
+        }
+
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            color: #14213D;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .reload-button {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #14213D;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .reload-button:hover {
+            background-color: #0d1a2e;
+        }
+
+        .content {
+            margin-top: 20px;
+        }
+
+        .no-changes {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            font-size: 16px;
+        }
+
+        .changelog-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .changelog-entry {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+            transition: all 0.2s ease;
+        }
+
+        .changelog-entry:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .entry-title {
+            font-weight: bold;
+            color: #14213D;
+            font-size: 16px;
+            flex: 1;
+        }
+
+        .entry-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .entry-type.course {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .entry-type.major {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .entry-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .entry-description {
+            background-color: white;
+            padding: 10px 12px;
+            border-left: 3px solid #14213D;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .entry-description-label {
+            font-weight: bold;
+            color: #14213D;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .entry-notes {
+            background-color: white;
+            padding: 10px 12px;
+            border-left: 3px solid #ffa500;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .entry-notes-label {
+            font-weight: bold;
+            color: #14213D;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .entry-faculty {
+            font-size: 12px;
+            color: #888;
+            text-align: right;
+            margin-top: 10px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #ef5350;
+            border-radius: 5px;
+            padding: 15px;
+            color: #c62828;
+            margin-bottom: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background-color: white;
+            color: #14213D;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .pagination button:hover {
+            background-color: #14213D;
+            color: white;
+        }
+
+        .pagination button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination button.active {
+            background-color: #14213D;
+            color: white;
+        }
+
+        .empty-notes {
+            color: #999;
+            font-style: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button" onclick="window.location.href='/faculty'">
+            ← Back to Faculty Portal
+        </button>
+        <button class="logout-button" onclick="window.location.href='/logout'">
+            Logout
+        </button>
+
+        <h1>Changelog</h1>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="filterType">Filter by Type:</label>
+                <select id="filterType" onchange="applyFilter()">
+                    <option value="">All Changes</option>
+                    <option value="course">Course Changes</option>
+                    <option value="major">Major Changes</option>
+                </select>
+            </div>
+            <button class="reload-button" onclick="loadChanges()">Reload</button>
+        </div>
+
+        <div class="content">
+            <div id="errorContainer"></div>
+            <div id="loadingContainer" class="loading" style="display:none;">Loading changelog...</div>
+            <div id="noChangesContainer" class="no-changes" style="display:none;">No changelog entries found.</div>
+            <ul class="changelog-list" id="changelogList"></ul>
+        </div>
+    </div>
+
+    <script>
+        const ITEMS_PER_PAGE = 20;
+        let allChanges = [];
+        let filteredChanges = [];
+        let currentPage = 1;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadChanges();
+        });
+
+        async function loadChanges() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const errorContainer = document.getElementById('errorContainer');
+            const noChangesContainer = document.getElementById('noChangesContainer');
+            const changelogList = document.getElementById('changelogList');
+
+            loadingContainer.style.display = 'block';
+            errorContainer.innerHTML = '';
+            changelogList.innerHTML = '';
+            noChangesContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/changelog/all?limit=500');
+                if (!response.ok) {
+                    console.log('Failed to fetch changelog:', response.statusText, response.status);
+                    throw new Error('Failed to load changelog');
+                }
+
+                allChanges = await response.json();
+                currentPage = 1;
+                applyFilter();
+            } catch (error) {
+                console.error('Error loading changelog:', error);
+                errorContainer.innerHTML = `<div class="error">Error loading changelog: ${error.message}</div>`;
+            } finally {
+                loadingContainer.style.display = 'none';
+            }
+        }
+
+        function applyFilter() {
+            const filterType = document.getElementById('filterType').value;
+
+            if (filterType) {
+                filteredChanges = allChanges.filter(change => change.changeType === filterType);
+            } else {
+                filteredChanges = allChanges;
+            }
+
+            currentPage = 1;
+            displayChanges();
+        }
+
+        function displayChanges() {
+            const changelogList = document.getElementById('changelogList');
+            const noChangesContainer = document.getElementById('noChangesContainer');
+
+            changelogList.innerHTML = '';
+
+            if (filteredChanges.length === 0) {
+                noChangesContainer.style.display = 'block';
+                return;
+            }
+
+            noChangesContainer.style.display = 'none';
+
+            const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIdx = startIdx + ITEMS_PER_PAGE;
+            const pageChanges = filteredChanges.slice(startIdx, endIdx);
+
+            pageChanges.forEach(change => {
+                const listItem = document.createElement('li');
+                listItem.className = 'changelog-entry';
+
+                const date = new Date(change.date);
+                const formattedDate = date.toLocaleString();
+
+                const typeClass = change.changeType === 'course' ? 'course' : 'major';
+
+                listItem.innerHTML = `
+                    <div class="entry-header">
+                        <div class="entry-title">Change #${change.id.substring(0, 8)}</div>
+                        <span class="entry-type ${typeClass}">${change.changeType.toUpperCase()}</span>
+                    </div>
+                    <div class="entry-meta">
+                        <div class="meta-item">
+                            <strong>Date:</strong> ${formattedDate}
+                        </div>
+                        <div class="meta-item">
+                            <strong>Faculty:</strong> ${change.facultyEmail || 'Unknown'}
+                        </div>
+                    </div>
+                    <div class="entry-description">
+                        <span class="entry-description-label">Description:</span>
+                        ${change.description}
+                    </div>
+                    <div class="entry-notes">
+                        <span class="entry-notes-label">Faculty Notes:</span>
+                        ${change.notes ? change.notes : '<span class="empty-notes">No notes provided</span>'}
+                    </div>
+                    <div class="entry-faculty">
+                        ID: ${change.id}
+                    </div>
+                `;
+
+                changelogList.appendChild(listItem);
+            });
+        }
+
+        function nextPage() {
+            const maxPage = Math.ceil(filteredChanges.length / ITEMS_PER_PAGE);
+            if (currentPage < maxPage) {
+                currentPage++;
+                displayChanges();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayChanges();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+    </script>
+</body>
+</html>
