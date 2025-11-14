@@ -196,6 +196,62 @@
             padding: 40px 20px;
             display: none;
         }
+        
+        /* Tabs styling */
+        .tabs-container {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            gap: 0;
+            margin-top: 30px;
+            overflow-x: auto;
+            background-color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .tab-button {
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            background-color: #f5f5f5;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .tab-button:hover {
+            background-color: #ececec;
+        }
+        
+        .tab-button.active {
+            background-color: white;
+            color: #14213D;
+            border-bottom-color: #14213D;
+        }
+        
+        /* Tab content */
+        .tab-content {
+            display: none;
+            margin-top: 0;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            overflow-y: auto;
+            max-height: 400px;
+            background-color: white;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-content .course-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
     </style>
 </head>
 <body>
@@ -226,66 +282,258 @@
             <input type="text" class="search-bar" id="searchBar" placeholder="SEARCHBAR" onkeyup="searchCourses()">
         </div>
         
-        <!-- Courses List -->
-        <div class="courses-container">
-            <div class="course-grid" id="courseGrid">
-                <!-- Sample courses - these will be populated from Firestore database -->
-                <button class="course-button" onclick="goToEditCourse('CIS 111 - Computer Science I')">
-                    <span>CIS 111 - Computer Science I</span>
-                    <span class="course-year">2025</span>
-                </button>
-                <button class="course-button" onclick="goToEditCourse('CIS 112 - Computer Science II')">
-                    <span>CIS 112 - Computer Science II</span>
-                    <span class="course-year">2025</span>
-                </button>
-                <button class="course-button" onclick="goToEditCourse('CIS 113 - Honors Computer Science I')">
-                    <span>CIS 113 - Honors Computer Science I</span>
-                    <span class="course-year">2025</span>
-                </button>
-                <button class="course-button" onclick="goToEditCourse('CIS 211 - Computer Science I')">
-                    <span>CIS 211 - Computer Science I</span>
-                    <span class="course-year">2025</span>
-                </button>
-                <button class="course-button" onclick="goToEditCourse('CIS 212 - Data Structures')">
-                    <span>CIS 212 - Data Structures</span>
-                    <span class="course-year">2025</span>
-                </button>
-                <button class="course-button" onclick="goToEditCourse('CIS 313 - Algorithms')">
-                    <span>CIS 313 - Algorithms</span>
-                    <span class="course-year">2025</span>
-                </button>
-                <button class="course-button" onclick="goToEditCourse('CIS 314 - Computer Organization')">
-                    <span>CIS 314 - Computer Organization</span>
-                    <span class="course-year">2025</span>
-                </button>
-                <button class="course-button" onclick="goToEditCourse('CIS 415 - Operating Systems')">
-                    <span>CIS 415 - Operating Systems</span>
-                    <span class="course-year">2025</span>
-                </button>
-            </div>
-            <div class="no-results" id="noResults">
-                No courses found matching your search.
-            </div>
+        <!-- Tabs for Required Courses and Electives -->
+        <div class="tabs-container" id="tabsContainer">
+            <!-- Tabs will be populated here -->
+        </div>
+        
+        <!-- Tab Contents -->
+        <div id="tabContentsContainer">
+            <!-- Tab contents will be populated here -->
+        </div>
+        
+        <div class="no-results" id="noResults">
+            No courses found matching your search.
         </div>
     </div>
     
     <script>
+        let majorData = null;
+        let currentTab = 'required';
+        let courseCache = {}; // Cache for course data
+
+        // Fetch and cache all courses
+        async function loadCourseCache() {
+            try {
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
+                const courses = await response.json();
+                
+                // Create a map of courseID -> course data
+                courses.forEach(course => {
+                    if (course.courseID) {
+                        courseCache[course.courseID] = course;
+                    }
+                });
+                console.log('Course cache loaded:', Object.keys(courseCache).length, 'courses');
+            } catch (error) {
+                console.error('Failed to load course cache:', error);
+            }
+        }
+
+        // Get course title by ID
+        function getCourseTitleById(courseId) {
+            const course = courseCache[courseId];
+            return course ? course.title : null;
+        }
+
         // Get major name from URL parameters
         function getMajorFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             const major = urlParams.get('major');
             if (major) {
                 document.getElementById('majorName').textContent = major;
+                loadMajorRequirements(major);
             }
         }
-        
+
+        // Load major requirements from database
+        async function loadMajorRequirements(majorName) {
+            try {
+                console.log('Loading requirements for major:', majorName);
+                
+                // First, fetch the major to get the requirementsRef
+                const majorsResponse = await fetch('/api/majors');
+                if (!majorsResponse.ok) {
+                    throw new Error('Failed to load majors.');
+                }
+
+                const majors = await majorsResponse.json();
+                console.log('All majors:', majors);
+                
+                // Find the specific major by name
+                const foundMajor = majors.find(m => m.name === majorName || m.id === majorName);
+                if (!foundMajor) {
+                    console.error('Major not found:', majorName);
+                    return;
+                }
+
+                majorData = foundMajor;
+                console.log('Found major:', majorData);
+                
+                // Use requirementsRef to fetch from requirements collection
+                const requirementsRef = majorData.requirementsRef;
+                if (!requirementsRef) {
+                    console.error('No requirementsRef found in major');
+                    renderTabs();
+                    return;
+                }
+
+                // Fetch from requirements collection using the requirementsRef as document ID
+                const requirementsResponse = await fetch(`/api/requirements/${requirementsRef}`);
+                if (requirementsResponse.ok) {
+                    const requirementsData = await requirementsResponse.json();
+                    console.log('Requirements data:', requirementsData);
+                    majorData.requirementsData = requirementsData;
+                    renderTabs();
+                } else {
+                    console.warn('Could not load requirements data, using major data only');
+                    renderTabs();
+                }
+            } catch (error) {
+                console.error('Failed to fetch major data:', error);
+            }
+        }
+
+        // Render tabs for required courses and electives
+        function renderTabs() {
+            if (!majorData) return;
+
+            console.log('Rendering tabs with major data:', majorData);
+
+            const tabsContainer = document.getElementById('tabsContainer');
+            const contentsContainer = document.getElementById('tabContentsContainer');
+            tabsContainer.innerHTML = '';
+            contentsContainer.innerHTML = '';
+
+            const tabs = [];
+            const contents = [];
+
+            // Add Required Courses tab (from major's reqs.courses)
+            const requiredCourses = majorData.reqs?.courses || majorData.coreCourses || [];
+            console.log('Required courses:', requiredCourses);
+
+            const requiredTab = document.createElement('button');
+            requiredTab.className = 'tab-button active';
+            requiredTab.textContent = 'Required Courses';
+            requiredTab.onclick = () => switchTab('required');
+            tabs.push(requiredTab);
+
+            const requiredContent = document.createElement('div');
+            requiredContent.id = 'required-content';
+            requiredContent.className = 'tab-content active';
+            const requiredGrid = document.createElement('div');
+            requiredGrid.className = 'course-grid';
+
+            // Populate required courses
+            requiredCourses.forEach(courseId => {
+                const button = document.createElement('button');
+                button.className = 'course-button';
+                button.onclick = () => goToEditCourse(courseId);
+                
+                const courseTitle = getCourseTitleById(courseId);
+                const titleText = courseTitle ? `${courseId} - ${courseTitle}` : courseId;
+                button.innerHTML = titleText;
+                
+                requiredGrid.appendChild(button);
+            });
+
+            if (requiredGrid.children.length === 0) {
+                const noCoursesMsg = document.createElement('div');
+                noCoursesMsg.style.cssText = 'text-align: center; padding: 40px; color: #666;';
+                noCoursesMsg.textContent = 'No required courses defined.';
+                requiredGrid.appendChild(noCoursesMsg);
+            }
+
+            requiredContent.appendChild(requiredGrid);
+            contents.push(requiredContent);
+
+            // Add elective tabs from requirements collection
+            if (majorData.requirementsData && majorData.requirementsData.groups && Array.isArray(majorData.requirementsData.groups)) {
+                console.log('Groups:', majorData.requirementsData.groups);
+                
+                majorData.requirementsData.groups.forEach((group, index) => {
+                    if (typeof group === 'object' && group !== null) {
+                        const electiveTab = document.createElement('button');
+                        electiveTab.className = 'tab-button';
+                        
+                        const groupTitle = group.title || `Elective ${index + 1}`;
+                        electiveTab.textContent = groupTitle;
+                        electiveTab.onclick = () => switchTab(`elective-${index}`);
+                        tabs.push(electiveTab);
+
+                        const electiveContent = document.createElement('div');
+                        electiveContent.id = `elective-${index}-content`;
+                        electiveContent.className = 'tab-content';
+                        const electiveGrid = document.createElement('div');
+                        electiveGrid.className = 'course-grid';
+
+                        // Get courses from the group
+                        const groupCourses = group.courses || [];
+                        console.log(`Group ${index} (${groupTitle}) courses:`, groupCourses);
+
+                        // Populate elective courses
+                        groupCourses.forEach(courseId => {
+                            const button = document.createElement('button');
+                            button.className = 'course-button';
+                            button.onclick = () => goToEditCourse(courseId);
+                            
+                            const courseTitle = getCourseTitleById(courseId);
+                            const titleText = courseTitle ? `${courseId} - ${courseTitle}` : courseId;
+                            button.innerHTML = titleText;
+                            
+                            electiveGrid.appendChild(button);
+                        });
+
+                        if (electiveGrid.children.length === 0) {
+                            const noCoursesMsg = document.createElement('div');
+                            noCoursesMsg.style.cssText = 'text-align: center; padding: 40px; color: #666;';
+                            noCoursesMsg.textContent = 'No courses in this group.';
+                            electiveGrid.appendChild(noCoursesMsg);
+                        }
+
+                        electiveContent.appendChild(electiveGrid);
+                        contents.push(electiveContent);
+                    }
+                });
+            } else {
+                console.warn('No groups found in requirements data');
+            }
+
+            // Add tabs and content to the DOM
+            tabs.forEach(tab => tabsContainer.appendChild(tab));
+            contents.forEach(content => contentsContainer.appendChild(content));
+        }
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            currentTab = tabName;
+
+            // Update tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+
+            // Update tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Find and activate the selected button by finding the one with matching onclick
+            const selectedButton = Array.from(tabButtons).find(btn => {
+                if (tabName === 'required' && btn.textContent === 'Required Courses') {
+                    return true;
+                }
+                // For electives, check if the onclick contains the tab name
+                const onclickStr = btn.onclick.toString();
+                return onclickStr.includes(`switchTab('${tabName}')`);
+            });
+            
+            if (selectedButton) {
+                selectedButton.classList.add('active');
+            }
+
+            // Find and activate the selected content
+            const selectedContent = document.getElementById(`${tabName}-content`);
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+            }
+        }
+
         // Search functionality
         function searchCourses() {
             const searchTerm = document.getElementById('searchBar').value.toLowerCase();
             const courseButtons = document.querySelectorAll('.course-button');
-            const noResults = document.getElementById('noResults');
             let visibleCount = 0;
-            
+
             courseButtons.forEach(button => {
                 const courseName = button.querySelector('span').textContent.toLowerCase();
                 if (courseName.includes(searchTerm)) {
@@ -295,32 +543,33 @@
                     button.classList.add('hidden');
                 }
             });
-            
+
             // Show/hide no results message
+            const noResults = document.getElementById('noResults');
             if (visibleCount === 0 && searchTerm !== '') {
                 noResults.style.display = 'block';
             } else {
                 noResults.style.display = 'none';
             }
         }
-        
+
         // Navigate to edit course page with selected course
         function goToEditCourse(courseName) {
-            // Get major name from the page
             const majorName = document.getElementById('majorName').textContent;
-            // Pass both course and major in the URL
             window.location.href = '/faculty/editCourse?course=' + encodeURIComponent(courseName) + '&major=' + encodeURIComponent(majorName);
         }
-        
+
         // Edit major functionality
         function editMajor() {
             const majorName = document.getElementById('majorName').textContent;
             window.location.href = '/faculty/editRequirements?major=' + encodeURIComponent(majorName);
         }
-        
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            getMajorFromURL();
+            loadCourseCache().then(() => {
+                getMajorFromURL();
+            });
         });
     </script>
 </body>

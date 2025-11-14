@@ -665,53 +665,76 @@
         </div>
     </div>
 
-    <!-- Prerequisites Modal -->
-    <div id="prereqModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add Prerequisites for <span id="courseNameInModal"></span></h2>
-                <button class="close-modal" onclick="closePrereqModal()">&times;</button>
-            </div>
-            <input 
-                type="text" 
-                class="modal-searchbar" 
-                id="prereqSearchbar" 
-                placeholder="Search for prerequisite courses..."
-            >
-            <div class="prereq-list" id="prereqList"></div>
-            <div class="modal-buttons">
-                <button class="modal-button cancel" onclick="closePrereqModal()">Cancel</button>
-                <button class="modal-button confirm" onclick="confirmPrereqs()">Add Selected</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const majorName = '[[${majorName}]]';
         let allCourses = [];
         let coreCourses = [];
         let isModified = false;
+        let courseCache = {}; // Cache for course data by courseID
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            loadCoreRequirements();
-            loadCatalog();
-            setupDragAndDrop();
-            setupSearchbar();
+            loadCourseCache().then(() => {
+                loadCoreRequirements();
+                loadCatalog();
+                setupDragAndDrop();
+                setupSearchbar();
+            });
         });
+
+        // Load and cache all courses from the courses collection
+        async function loadCourseCache() {
+            try {
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
+                const courses = await response.json();
+                
+                // Create a map of courseID -> course data
+                courses.forEach(course => {
+                    if (course.courseID) {
+                        courseCache[course.courseID] = course;
+                    }
+                });
+                console.log('Course cache loaded:', Object.keys(courseCache).length, 'courses');
+            } catch (error) {
+                console.error('Failed to load course cache:', error);
+            }
+        }
+
+        // Get course title by ID
+        function getCourseTitleById(courseId) {
+            const course = courseCache[courseId];
+            return course ? course.title : null;
+        }
 
         // Load core courses for the major
         async function loadCoreRequirements() {
             try {
-                // This would fetch from your database - adjust endpoint as needed
-                const response = await fetch(`/api/majors/requirements?major=${encodeURIComponent(majorName)}`);
+                // Fetch the major data from the API
+                const response = await fetch('/api/majors');
                 if (response.ok) {
-                    coreCourses = await response.json();
-                    // Save original state for changelog comparison
-                    originalCoreCourses = JSON.parse(JSON.stringify(coreCourses));
-                    displayCoreCourses();
+                    const majors = await response.json();
+                    // Find the major matching the majorName
+                    const major = majors.find(m => m.name === majorName || m.id === majorName);
+                    
+                    if (major && major.reqs && major.reqs.courses) {
+                        // Convert course IDs to course objects with cached titles
+                        const courseCodes = major.reqs.courses;
+                        
+                        coreCourses = courseCodes.map(code => {
+                            // Use cached course data if available, otherwise create minimal object
+                            const cachedCourse = courseCache[code];
+                            return cachedCourse || { id: code, code: code, courseID: code, title: 'Unknown' };
+                        });
+                        
+                        originalCoreCourses = JSON.parse(JSON.stringify(coreCourses));
+                        displayCoreCourses();
+                    } else {
+                        coreCourses = [];
+                        originalCoreCourses = [];
+                        displayCoreCourses();
+                    }
                 } else {
-                    // Initialize empty if endpoint doesn't exist yet
                     coreCourses = [];
                     originalCoreCourses = [];
                     displayCoreCourses();
@@ -727,22 +750,23 @@
         // Load all catalog courses
         async function loadCatalog() {
             try {
-                const response = await fetch('/catalog?limit=1000');
+                const response = await fetch('/api/courses?limit=1000');
                 if (response.ok) {
                     allCourses = await response.json();
                     // Sort alphabetically by code or title
                     allCourses.sort((a, b) => {
-                        const aName = (a.code || a.title || '').toLowerCase();
-                        const bName = (b.code || b.title || '').toLowerCase();
+                        const aName = (a.code || a.courseID || a.id || '').toLowerCase();
+                        const bName = (b.code || b.courseID || b.id || '').toLowerCase();
                         return aName.localeCompare(bName);
                     });
+                    console.log('Loaded courses from courses collection:', allCourses);
                     displayCatalog();
                 } else {
-                    showError('Failed to load catalog courses');
+                    showError('Failed to load courses');
                 }
             } catch (error) {
-                console.error('Error loading catalog:', error);
-                showError('Error loading catalog: ' + error.message);
+                console.error('Error loading courses:', error);
+                showError('Error loading courses: ' + error.message);
             }
         }
 
@@ -781,16 +805,18 @@
 
             list.innerHTML = '';
 
-            const coreCourseIds = new Set(coreCourses.map(c => c.id));
+            // Create a set of course identifiers already in core courses
+            const coreCourseIds = new Set(coreCourses.map(c => c.code || c.id));
 
             const filteredCourses = allCourses.filter(course => {
                 // Don't show courses already in core courses
-                if (coreCourseIds.has(course.id)) {
+                const courseCode = course.code || course.courseID || course.id;
+                if (coreCourseIds.has(courseCode)) {
                     return false;
                 }
                 
-                const code = (course.code || '').toLowerCase();
-                const title = (course.title || '').toLowerCase();
+                const code = (course.code || course.courseID || course.id || '').toLowerCase();
+                const title = (course.title || course.name || '').toLowerCase();
                 return code.includes(searchTerm) || title.includes(searchTerm);
             });
 
@@ -809,9 +835,10 @@
         function createCourseElement(course, type) {
             const li = document.createElement('li');
             li.draggable = true;
-            li.dataset.courseId = course.id;
-            li.dataset.courseCode = course.code;
-            li.dataset.courseTitle = course.title;
+            // Use courseID, id, or code as the identifier
+            li.dataset.courseId = course.id || course.courseID || course.code;
+            li.dataset.courseCode = course.code || course.courseID || course.id;
+            li.dataset.courseTitle = course.title || course.name || 'Unknown Course';
 
             const handle = document.createElement('span');
             handle.className = 'drag-handle';
@@ -819,33 +846,15 @@
 
             const code = document.createElement('span');
             code.className = 'course-code';
-            code.textContent = course.code || 'N/A';
+            code.textContent = course.code || course.courseID || 'N/A';
 
             const title = document.createElement('span');
             title.className = 'course-title';
-            title.textContent = course.title || 'Unknown Course';
+            title.textContent = course.title || course.name || 'Unknown Course';
 
             li.appendChild(handle);
             li.appendChild(code);
             li.appendChild(title);
-
-            // Add prereq button for core courses
-            if (type === 'core') {
-                const actions = document.createElement('div');
-                actions.className = 'course-actions';
-                
-                const prereqBtn = document.createElement('button');
-                prereqBtn.className = 'prereq-button';
-                prereqBtn.textContent = 'Add Prereqs';
-                prereqBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openPrereqModal(course);
-                };
-                
-                actions.appendChild(prereqBtn);
-                li.appendChild(actions);
-            }
 
             // Add event listeners for drag
             li.addEventListener('dragstart', handleDragStart);
@@ -1063,15 +1072,12 @@
         // Save requirements
         async function saveRequirements() {
             try {
+                // Extract just the course codes from coreCourses
+                const courseCodesInOrder = coreCourses.map(course => course.code || course.id);
+
                 const payload = {
                     major: majorName,
-                    coreCourses: coreCourses.map((course, index) => ({
-                        id: course.id,
-                        code: course.code,
-                        title: course.title,
-                        order: index,
-                        prerequisite: index > 0 ? coreCourses[index - 1].id : null
-                    }))
+                    courses: courseCodesInOrder
                 };
 
                 const response = await fetch('/api/majors/requirements', {
@@ -1120,112 +1126,6 @@
                 window.location.href = '/faculty/courseRequirements';
             }
         }
-
-        // Prerequisite Modal Functions
-        let currentCourseForPrereq = null;
-        let selectedPrerequisites = new Set();
-
-        function openPrereqModal(course) {
-            currentCourseForPrereq = course;
-            selectedPrerequisites.clear();
-            
-            // Load existing prereqs if any
-            if (course.prerequisites && Array.isArray(course.prerequisites)) {
-                course.prerequisites.forEach(prereq => {
-                    selectedPrerequisites.add(prereq.id || prereq);
-                });
-            }
-
-            document.getElementById('courseNameInModal').textContent = `${course.code} - ${course.title}`;
-            document.getElementById('prereqSearchbar').value = '';
-            displayPrereqList('');
-            document.getElementById('prereqModal').style.display = 'block';
-        }
-
-        function closePrereqModal() {
-            document.getElementById('prereqModal').style.display = 'none';
-            currentCourseForPrereq = null;
-            selectedPrerequisites.clear();
-        }
-
-        function displayPrereqList(searchTerm) {
-            const list = document.getElementById('prereqList');
-            list.innerHTML = '';
-
-            const searchLower = searchTerm.toLowerCase();
-            
-            // Show all courses except the current course being edited
-            const availableCourses = allCourses.filter(course => {
-                if (currentCourseForPrereq && course.id === currentCourseForPrereq.id) {
-                    return false; // Can't be a prereq for itself
-                }
-                const code = (course.code || '').toLowerCase();
-                const title = (course.title || '').toLowerCase();
-                return code.includes(searchLower) || title.includes(searchLower);
-            });
-
-            if (availableCourses.length === 0) {
-                list.innerHTML = '<div style="padding: 15px; text-align: center; color: #999;">No courses found</div>';
-                return;
-            }
-
-            availableCourses.forEach(course => {
-                const div = document.createElement('div');
-                div.className = 'prereq-item';
-                if (selectedPrerequisites.has(course.id)) {
-                    div.classList.add('selected');
-                }
-                div.innerHTML = `<strong>${course.code}</strong> - ${course.title}`;
-                div.onclick = () => togglePrereqSelection(course.id);
-                list.appendChild(div);
-            });
-        }
-
-        function togglePrereqSelection(courseId) {
-            if (selectedPrerequisites.has(courseId)) {
-                selectedPrerequisites.delete(courseId);
-            } else {
-                selectedPrerequisites.add(courseId);
-            }
-            displayPrereqList(document.getElementById('prereqSearchbar').value);
-        }
-
-        function confirmPrereqs() {
-            if (!currentCourseForPrereq) return;
-
-            // Update the course object with selected prerequisites
-            const prereqArray = Array.from(selectedPrerequisites).map(id => {
-                const course = allCourses.find(c => c.id === id);
-                return {
-                    id: id,
-                    code: course.code,
-                    title: course.title
-                };
-            });
-
-            currentCourseForPrereq.prerequisites = prereqArray;
-            isModified = true;
-            closePrereqModal();
-            showSuccess(`Prerequisites updated for ${currentCourseForPrereq.code}`);
-        }
-
-        // Setup search for prereq modal
-        document.addEventListener('DOMContentLoaded', function() {
-            const prereqSearchbar = document.getElementById('prereqSearchbar');
-            if (prereqSearchbar) {
-                prereqSearchbar.addEventListener('input', function() {
-                    displayPrereqList(this.value);
-                });
-            }
-
-            // Close modal when clicking outside
-            window.addEventListener('click', function(event) {
-                const modal = document.getElementById('prereqModal');
-                if (event.target === modal) {
-                    closePrereqModal();
-                }
-            });
-        });
     </script>
 </body>
 </html>

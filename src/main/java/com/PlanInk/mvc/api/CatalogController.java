@@ -80,4 +80,31 @@ public class CatalogController {
         }
         return out;
     }
+
+    // GET /api/courses -> list all courses from courses collection
+    @GetMapping("/api/courses")
+    public List<Map<String,Object>> listAllCourses(@RequestParam(defaultValue = "1000") int limit) throws Exception {
+        Firestore db = FirestoreClient.getFirestore();
+        ApiFuture<QuerySnapshot> fut = db.collection("courses").limit(limit).get();
+        List<QueryDocumentSnapshot> docs = fut.get(5, TimeUnit.SECONDS).getDocuments();
+
+        List<Map<String,Object>> out = new ArrayList<>();
+        for (QueryDocumentSnapshot d : docs) {
+            Map<String,Object> m = new HashMap<>(d.getData());
+            m.put("id", d.getId());
+            out.add(m);
+        }
+        return out;
+    }
+
+    // GET /api/requirements/{id} -> fetch a requirements document from the requirements collection
+    @GetMapping("/api/requirements/{id}")
+    public Map<String,Object> getRequirements(@PathVariable String id) throws Exception {
+        Firestore db = FirestoreClient.getFirestore();
+        DocumentSnapshot snap = db.collection("requirements").document(id).get().get(5, TimeUnit.SECONDS);
+        if (!snap.exists()) throw new NoSuchElementException("Requirements not found: " + id);
+        Map<String,Object> m = new HashMap<>(snap.getData());
+        m.put("id", snap.getId());
+        return m;
+    }
 }

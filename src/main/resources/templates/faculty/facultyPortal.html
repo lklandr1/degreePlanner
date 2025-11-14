@@ -164,56 +164,11 @@
         
         <!-- Majors List -->
         <div class="majors-container">
-            <div class="major-grid" id="majorGrid">
-                <!-- Sample majors - these will be populated from Firestore database -->
-                <button class="major-button" onclick="goToCourseRequirements('Computer Science')">
-                    Computer Science
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Mathematics')">
-                    Mathematics
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Biology')">
-                    Biology
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Chemistry')">
-                    Chemistry
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Physics')">
-                    Physics
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('English Literature')">
-                    English Literature
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('History')">
-                    History
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Psychology')">
-                    Psychology
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Business Administration')">
-                    Business Administration
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Economics')">
-                    Economics
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Political Science')">
-                    Political Science
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Sociology')">
-                    Sociology
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Art')">
-                    Art
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Music')">
-                    Music
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Theater')">
-                    Theater
-                </button>
-                <button class="major-button" onclick="goToCourseRequirements('Philosophy')">
-                    Philosophy
-                </button>
+            <div id="loadingStatus" style="text-align: center; padding: 40px; color: #666;">
+                Loading majors...
+            </div>
+            <div class="major-grid" id="majorGrid" style="display: none;">
+                <!-- Majors will be populated from Firebase database -->
             </div>
             <div class="no-results" id="noResults">
                 No majors found matching your search.
@@ -222,6 +177,59 @@
     </div>
     
     <script>
+        let majorsCache = [];
+
+        // Load majors from database
+        async function loadMajors() {
+            const loadingStatus = document.getElementById('loadingStatus');
+            const majorGrid = document.getElementById('majorGrid');
+            const noResults = document.getElementById('noResults');
+
+            try {
+                console.log('Fetching majors from /api/majors...');
+                const response = await fetch('/api/majors');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to load majors: ${response.status} ${errorText}`);
+                }
+
+                const majors = await response.json();
+                console.log('Majors received:', majors);
+
+                if (!Array.isArray(majors) || majors.length === 0) {
+                    loadingStatus.textContent = 'No majors available.';
+                    console.warn('No majors in response or not an array');
+                    return;
+                }
+
+                majorsCache = majors;
+                renderMajors(majorsCache);
+                loadingStatus.style.display = 'none';
+                majorGrid.style.display = 'flex';
+
+            } catch (error) {
+                console.error('Failed to fetch majors:', error);
+                loadingStatus.textContent = 'Unable to load majors. Please try again later.';
+            }
+        }
+
+        // Render majors to the page
+        function renderMajors(majors) {
+            const majorGrid = document.getElementById('majorGrid');
+            majorGrid.innerHTML = '';
+
+            majors.forEach(major => {
+                const majorName = major.name || major.id;
+                const button = document.createElement('button');
+                button.className = 'major-button';
+                button.textContent = majorName;
+                button.onclick = () => goToCourseRequirements(majorName);
+                majorGrid.appendChild(button);
+            });
+        }
+
         // Search functionality
         function searchMajors() {
             const searchTerm = document.getElementById('searchBar').value.toLowerCase();
@@ -249,9 +257,13 @@
         
         // Navigate to course requirements page with selected major
         function goToCourseRequirements(majorName) {
-            // You can modify this URL structure based on how you want to pass the major information
             window.location.href = '/faculty/courseRequirements?major=' + encodeURIComponent(majorName);
         }
+
+        // Initialize page on load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMajors();
+        });
     </script>
 </body>
 </body>
