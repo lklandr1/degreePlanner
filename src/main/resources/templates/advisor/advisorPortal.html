@@ -23,6 +23,10 @@
             text-align: center;
             margin-bottom: 40px;
         }
+        h2 {
+            color: #14213D;
+            margin-top: 0;
+        }
         .button-container {
             display: flex;
             justify-content: center;
@@ -101,6 +105,186 @@
             border-radius: 6px;
             font-size: 16px;
         }
+        .changelog-section {
+            display: none;
+            margin-top: 50px;
+        }
+        .changelog-section.active {
+            display: block;
+        }
+        .back-to-main {
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #6c757d;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 20px;
+        }
+        .back-to-main:hover {
+            background-color: #5a6268;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .filter-group label {
+            font-weight: bold;
+            color: #14213D;
+        }
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+        .reload-button {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #14213D;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .reload-button:hover {
+            background-color: #0d1a2e;
+        }
+        .no-changes {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            font-size: 16px;
+        }
+        .changelog-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .changelog-entry {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+            transition: all 0.2s ease;
+        }
+        .changelog-entry:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+        .entry-title {
+            font-weight: bold;
+            color: #14213D;
+            font-size: 16px;
+            flex: 1;
+        }
+        .entry-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .entry-type.course {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        .entry-type.major {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+        }
+        .entry-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .entry-description {
+            background-color: white;
+            padding: 10px 12px;
+            border-left: 3px solid #14213D;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+        }
+        .entry-description-label {
+            font-weight: bold;
+            color: #14213D;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .entry-notes {
+            background-color: white;
+            padding: 10px 12px;
+            border-left: 3px solid #ffa500;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+            font-style: italic;
+        }
+        .entry-notes-label {
+            font-weight: bold;
+            color: #14213D;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .entry-faculty {
+            font-size: 12px;
+            color: #888;
+            text-align: right;
+            margin-top: 10px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 8px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #ef5350;
+            border-radius: 5px;
+            padding: 15px;
+            color: #c62828;
+            margin-bottom: 20px;
+        }
+        .empty-notes {
+            color: #999;
+            font-style: normal;
+        }
     </style>
 </head>
 <body>
@@ -113,12 +297,12 @@
             <button class="nav-button" onclick="window.location.href='advisor/individualStudents'">
                 Individual Students
             </button>
-            <button class="nav-button" onclick="window.location.href='advisor/curriculumUpdates'">
+            <button class="nav-button" onclick="showChangelogSection()">
                 Curriculum Changes
             </button>
         </div>
 
-        <div class="students-section">
+        <div id="mainSection" class="students-section">
             <h2>Your Students</h2>
             <input id="studentSearch" class="search-input" type="text" placeholder="Search students by name, email, or ID...">
             <div id="studentsStatus" class="status info">Loading students...</div>
@@ -135,8 +319,35 @@
                 </tbody>
             </table>
         </div>
+
+        <div id="changelogSection" class="changelog-section">
+            <button class="back-to-main" onclick="hideChangelogSection()">← Back to Main</button>
+            <h2>Curriculum Changes</h2>
+            
+            <div class="controls">
+                <div class="filter-group">
+                    <label for="filterType">Filter by Type:</label>
+                    <select id="filterType" onchange="applyFilter()">
+                        <option value="">All Changes</option>
+                        <option value="course">Course Changes</option>
+                        <option value="major">Major Changes</option>
+                    </select>
+                </div>
+                <button class="reload-button" onclick="loadChanges()">Reload</button>
+            </div>
+
+            <div id="errorContainer"></div>
+            <div id="loadingContainer" class="loading" style="display:none;">Loading changelog...</div>
+            <div id="noChangesContainer" class="no-changes" style="display:none;">No changelog entries found.</div>
+            <ul class="changelog-list" id="changelogList"></ul>
+        </div>
     </div>
     <script>
+        const ITEMS_PER_PAGE = 20;
+        let allChanges = [];
+        let filteredChanges = [];
+        let currentPage = 1;
+
         async function loadStudents() {
             const statusEl = document.getElementById('studentsStatus');
             const table = document.getElementById('studentsTable');
@@ -214,6 +425,116 @@
                 </tr>
             `).join('');
             table.style.display = 'table';
+        }
+
+        // Changelog functions
+        function showChangelogSection() {
+            document.getElementById('mainSection').style.display = 'none';
+            document.getElementById('changelogSection').classList.add('active');
+            loadChanges();
+        }
+
+        function hideChangelogSection() {
+            document.getElementById('changelogSection').classList.remove('active');
+            document.getElementById('mainSection').style.display = 'block';
+        }
+
+        async function loadChanges() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const errorContainer = document.getElementById('errorContainer');
+            const noChangesContainer = document.getElementById('noChangesContainer');
+            const changelogList = document.getElementById('changelogList');
+
+            loadingContainer.style.display = 'block';
+            errorContainer.innerHTML = '';
+            changelogList.innerHTML = '';
+            noChangesContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/changelog/all?limit=500');
+                if (!response.ok) {
+                    console.log('Failed to fetch changelog:', response.statusText, response.status);
+                    throw new Error('Failed to load changelog');
+                }
+
+                allChanges = await response.json();
+                currentPage = 1;
+                applyFilter();
+            } catch (error) {
+                console.error('Error loading changelog:', error);
+                errorContainer.innerHTML = `<div class="error">Error loading changelog: ${error.message}</div>`;
+            } finally {
+                loadingContainer.style.display = 'none';
+            }
+        }
+
+        function applyFilter() {
+            const filterType = document.getElementById('filterType').value;
+
+            if (filterType) {
+                filteredChanges = allChanges.filter(change => change.changeType === filterType);
+            } else {
+                filteredChanges = allChanges;
+            }
+
+            currentPage = 1;
+            displayChanges();
+        }
+
+        function displayChanges() {
+            const changelogList = document.getElementById('changelogList');
+            const noChangesContainer = document.getElementById('noChangesContainer');
+
+            changelogList.innerHTML = '';
+
+            if (filteredChanges.length === 0) {
+                noChangesContainer.style.display = 'block';
+                return;
+            }
+
+            noChangesContainer.style.display = 'none';
+
+            const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIdx = startIdx + ITEMS_PER_PAGE;
+            const pageChanges = filteredChanges.slice(startIdx, endIdx);
+
+            pageChanges.forEach(change => {
+                const listItem = document.createElement('li');
+                listItem.className = 'changelog-entry';
+
+                const date = new Date(change.date);
+                const formattedDate = date.toLocaleString();
+
+                const typeClass = change.changeType === 'course' ? 'course' : 'major';
+
+                listItem.innerHTML = `
+                    <div class="entry-header">
+                        <div class="entry-title">Change #${change.id.substring(0, 8)}</div>
+                        <span class="entry-type ${typeClass}">${change.changeType.toUpperCase()}</span>
+                    </div>
+                    <div class="entry-meta">
+                        <div class="meta-item">
+                            <strong>Date:</strong> ${formattedDate}
+                        </div>
+                        <div class="meta-item">
+                            <strong>Faculty:</strong> ${change.facultyEmail || 'Unknown'}
+                        </div>
+                    </div>
+                    <div class="entry-description">
+                        <span class="entry-description-label">Description:</span>
+                        ${change.description}
+                    </div>
+                    <div class="entry-notes">
+                        <span class="entry-notes-label">Faculty Notes:</span>
+                        ${change.notes ? change.notes : '<span class="empty-notes">No notes provided</span>'}
+                    </div>
+                    <div class="entry-faculty">
+                        ID: ${change.id}
+                    </div>
+                `;
+
+                changelogList.appendChild(listItem);
+            });
         }
 
         document.addEventListener('DOMContentLoaded', loadStudents);
