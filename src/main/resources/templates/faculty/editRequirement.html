@@ -670,14 +670,42 @@
         let allCourses = [];
         let coreCourses = [];
         let isModified = false;
+        let courseCache = {}; // Cache for course data by courseID
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            loadCoreRequirements();
-            loadCatalog();
-            setupDragAndDrop();
-            setupSearchbar();
+            loadCourseCache().then(() => {
+                loadCoreRequirements();
+                loadCatalog();
+                setupDragAndDrop();
+                setupSearchbar();
+            });
         });
+
+        // Load and cache all courses from the courses collection
+        async function loadCourseCache() {
+            try {
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
+                const courses = await response.json();
+                
+                // Create a map of courseID -> course data
+                courses.forEach(course => {
+                    if (course.courseID) {
+                        courseCache[course.courseID] = course;
+                    }
+                });
+                console.log('Course cache loaded:', Object.keys(courseCache).length, 'courses');
+            } catch (error) {
+                console.error('Failed to load course cache:', error);
+            }
+        }
+
+        // Get course title by ID
+        function getCourseTitleById(courseId) {
+            const course = courseCache[courseId];
+            return course ? course.title : null;
+        }
 
         // Load core courses for the major
         async function loadCoreRequirements() {
@@ -690,15 +718,13 @@
                     const major = majors.find(m => m.name === majorName || m.id === majorName);
                     
                     if (major && major.reqs && major.reqs.courses) {
-                        // Convert course IDs to course objects
+                        // Convert course IDs to course objects with cached titles
                         const courseCodes = major.reqs.courses;
-                        // Fetch catalog to get full course details
-                        const catalogResponse = await fetch('/catalog?limit=1000');
-                        const allCoursesData = await catalogResponse.json();
                         
                         coreCourses = courseCodes.map(code => {
-                            const courseDetail = allCoursesData.find(c => c.code === code || c.courseID === code || c.id === code);
-                            return courseDetail || { id: code, code: code, title: 'Unknown' };
+                            // Use cached course data if available, otherwise create minimal object
+                            const cachedCourse = courseCache[code];
+                            return cachedCourse || { id: code, code: code, courseID: code, title: 'Unknown' };
                         });
                         
                         originalCoreCourses = JSON.parse(JSON.stringify(coreCourses));
