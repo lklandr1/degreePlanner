@@ -55,6 +55,22 @@ public class StudentDto {
         this.advisorID = advisorID;
     }
 
+    public String getGraduationDateSemester() {
+        return graduationDateSemester;
+    }
+
+    public void setGraduationDateSemester(String graduationDateSemester) {
+        this.graduationDateSemester = graduationDateSemester;
+    }
+
+    public String getGraduationDateYear() {
+        return graduationDateYear;
+    }
+
+    public void setGraduationDateYear(String graduationDateYear) {
+        this.graduationDateYear = graduationDateYear;
+    }
+
     @NotBlank @Email
     private String email;
 
@@ -69,5 +85,8 @@ public class StudentDto {
 
     @NotBlank
     private String advisorID;
+
+    private String graduationDateSemester;
+    private String graduationDateYear;
 
 }

@@ -313,6 +313,7 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Major</th>
+                        <th>Graduation Date</th>
                     </tr>
                 </thead>
                 <tbody id="studentsBody">
@@ -383,7 +384,15 @@
                         return;
                     }
                     const filtered = studentsCache.filter(student => {
-                        return ['studentID', 'name', 'email', 'majorID'].some(key => {
+                        const searchFields = ['studentID', 'name', 'email', 'majorID'];
+                        // Also search in graduation date if it exists
+                        if (student.graduationDate) {
+                            const gradDateStr = `${student.graduationDate.semester || ''} ${student.graduationDate.year || ''}`.toLowerCase();
+                            if (gradDateStr.includes(query)) {
+                                return true;
+                            }
+                        }
+                        return searchFields.some(key => {
                             const value = String(student[key] ?? '').toLowerCase();
                             return value.includes(query);
                         });
@@ -416,14 +425,21 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
 
-            tbody.innerHTML = students.map(student => `
+            tbody.innerHTML = students.map(student => {
+                let graduationDate = 'N/A';
+                if (student.graduationDate && student.graduationDate.semester && student.graduationDate.year) {
+                    graduationDate = `${escapeHtml(student.graduationDate.semester)} ${escapeHtml(student.graduationDate.year)}`;
+                }
+                return `
                 <tr>
                     <td>${escapeHtml(student.studentID)}</td>
                     <td>${escapeHtml(student.name)}</td>
                     <td>${escapeHtml(student.email)}</td>
                     <td>${escapeHtml(student.majorID)}</td>
+                    <td>${graduationDate}</td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
             table.style.display = 'table';
         }
 

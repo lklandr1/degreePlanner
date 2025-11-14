@@ -120,6 +120,12 @@
         error: null
     };
 
+    const currentYearSemesterState = {
+        cache: null,
+        loading: false,
+        error: null
+    };
+
     function escapeHtml(value) {
         return value
             .replace(/&/g, '&amp;')
@@ -175,16 +181,71 @@
         }
     }
 
+    async function fetchCurrentYearSemester() {
+        if (currentYearSemesterState.cache || currentYearSemesterState.loading || currentYearSemesterState.error) {
+            return currentYearSemesterState.cache;
+        }
+
+        currentYearSemesterState.loading = true;
+        try {
+            const response = await fetch('/api/currentYearSemester');
+            const contentType = response.headers.get('content-type');
+            const isJson = contentType && contentType.includes('application/json');
+            
+            if (!response.ok) {
+                // Try to parse error response only if it's JSON
+                let errorMsg = `Request failed with status ${response.status}`;
+                if (isJson) {
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorData.error || errorMsg;
+                    } catch (e) {
+                        // If JSON parsing fails, use default message
+                        console.error('Error parsing error response:', e);
+                    }
+                } else {
+                    // If not JSON, try to read as text for debugging
+                    try {
+                        const text = await response.text();
+                        console.error('Non-JSON error response:', text);
+                    } catch (e) {
+                        // Ignore if we can't read it
+                    }
+                }
+                throw new Error(errorMsg);
+            }
+            
+            // Parse response only if it's JSON
+            if (isJson) {
+                const data = await response.json();
+                currentYearSemesterState.cache = data;
+                return currentYearSemesterState.cache;
+            } else {
+                throw new Error('Expected JSON response but received: ' + contentType);
+            }
+        } catch (err) {
+            console.error('Failed to load current year semester:', err);
+            currentYearSemesterState.error = err.message || 'Unable to load current year semester. Please try again later.';
+            return null;
+        } finally {
+            currentYearSemesterState.loading = false;
+        }
+    }
+
     async function updateForm() {
         const type = document.getElementById('userType').value;
         const container = document.getElementById('formFields');
 
         if (type === 'student') {
             container.innerHTML = '<p>Loading student form...</p>';
-            const [majors, advisors] = await Promise.all([fetchMajors(), fetchAdvisors()]);
+            const [majors, advisors, currentYearSemester] = await Promise.all([
+                fetchMajors(), 
+                fetchAdvisors(), 
+                fetchCurrentYearSemester()
+            ]);
 
-            if (majorsState.error || advisorsState.error) {
-                const errors = [majorsState.error, advisorsState.error]
+            if (majorsState.error || advisorsState.error || currentYearSemesterState.error) {
+                const errors = [majorsState.error, advisorsState.error, currentYearSemesterState.error]
                     .filter(Boolean)
                     .map(msg => `<p class="error">${msg}</p>`)
                     .join('');
@@ -214,6 +275,16 @@
                 return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
             }).join('');
 
+            // Generate year options from current year to +5 years
+            let yearOptions = '';
+            if (currentYearSemester) {
+                const currentYear = parseInt(currentYearSemester.year || new Date().getFullYear());
+                for (let i = 0; i <= 5; i++) {
+                    const year = currentYear + i;
+                    yearOptions += `<option value="${year}">${year}</option>`;
+                }
+            }
+
             container.innerHTML = `
                 <input type="hidden" name="userType" value="student">
                 <div class="form-group">
@@ -240,6 +311,21 @@
                     <select id="advisorID" name="advisorID">
                         <option value="">-- Select Advisor --</option>
                         ${advisorOptions}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="graduationDateSemester">Graduation Date - Semester</label>
+                    <select id="graduationDateSemester" name="graduationDateSemester" required>
+                        <option value="">-- Select Semester --</option>
+                        <option value="Fall">Fall</option>
+                        <option value="Spring">Spring</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="graduationDateYear">Graduation Date - Year</label>
+                    <select id="graduationDateYear" name="graduationDateYear" required>
+                        <option value="">-- Select Year --</option>
+                        ${yearOptions}
                     </select>
                 </div>
                 <div class="form-group">
