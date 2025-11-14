@@ -300,6 +300,32 @@
     <script>
         let majorData = null;
         let currentTab = 'required';
+        let courseCache = {}; // Cache for course data
+
+        // Fetch and cache all courses
+        async function loadCourseCache() {
+            try {
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
+                const courses = await response.json();
+                
+                // Create a map of courseID -> course data
+                courses.forEach(course => {
+                    if (course.courseID) {
+                        courseCache[course.courseID] = course;
+                    }
+                });
+                console.log('Course cache loaded:', Object.keys(courseCache).length, 'courses');
+            } catch (error) {
+                console.error('Failed to load course cache:', error);
+            }
+        }
+
+        // Get course title by ID
+        function getCourseTitleById(courseId) {
+            const course = courseCache[courseId];
+            return course ? course.title : null;
+        }
 
         // Get major name from URL parameters
         function getMajorFromURL() {
@@ -394,7 +420,11 @@
                 const button = document.createElement('button');
                 button.className = 'course-button';
                 button.onclick = () => goToEditCourse(courseId);
-                button.innerHTML = `<span>${courseId}</span>`;
+                
+                const courseTitle = getCourseTitleById(courseId);
+                const titleText = courseTitle ? `${courseId} - ${courseTitle}` : courseId;
+                button.innerHTML = titleText;
+                
                 requiredGrid.appendChild(button);
             });
 
@@ -437,7 +467,11 @@
                             const button = document.createElement('button');
                             button.className = 'course-button';
                             button.onclick = () => goToEditCourse(courseId);
-                            button.innerHTML = `<span>${courseId}</span>`;
+                            
+                            const courseTitle = getCourseTitleById(courseId);
+                            const titleText = courseTitle ? `${courseId} - ${courseTitle}` : courseId;
+                            button.innerHTML = titleText;
+                            
                             electiveGrid.appendChild(button);
                         });
 
@@ -533,7 +567,9 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            getMajorFromURL();
+            loadCourseCache().then(() => {
+                getMajorFromURL();
+            });
         });
     </script>
 </body>
