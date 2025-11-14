@@ -19,7 +19,8 @@ public class AuthInterceptor implements HandlerInterceptor {
                 || path.startsWith("/signup")
                 || path.startsWith("/public")
                 || path.startsWith("/api/majors")
-                || path.startsWith("/api/advisors")) {
+                || path.startsWith("/api/advisors")
+                || path.startsWith("/api/currentYearSemester")) {
             return true;
         }
 

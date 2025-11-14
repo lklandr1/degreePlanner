@@ -69,6 +69,18 @@ public class SignupController {
                     data.put("studentID", params.get("studentID"));
                     data.put("majorID", params.get("majorID"));
                     data.put("advisorID", params.get("advisorID"));
+                    
+                    // Add graduationDate if provided
+                    String graduationDateSemester = params.get("graduationDateSemester");
+                    String graduationDateYear = params.get("graduationDateYear");
+                    if (graduationDateSemester != null && !graduationDateSemester.isBlank() &&
+                        graduationDateYear != null && !graduationDateYear.isBlank()) {
+                        Map<String, Object> graduationDate = new HashMap<>();
+                        graduationDate.put("semester", graduationDateSemester);
+                        graduationDate.put("year", graduationDateYear);
+                        data.put("graduationDate", graduationDate);
+                    }
+                    
                     firestore.collection("students").document(uid).set(data);
                 }
                 case "advisor" -> {

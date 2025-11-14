@@ -63,6 +63,14 @@ public class AdvisorStudentsController {
             row.put("name", doc.getString("name"));
             row.put("email", doc.getString("email"));
             row.put("majorID", doc.getString("majorID"));
+            
+            // Include graduationDate if it exists
+            @SuppressWarnings("unchecked")
+            Map<String, Object> graduationDate = (Map<String, Object>) doc.get("graduationDate");
+            if (graduationDate != null) {
+                row.put("graduationDate", graduationDate);
+            }
+            
             students.add(row);
         }
 
