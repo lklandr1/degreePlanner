@@ -3,12 +3,11 @@ package com.PlanInk.mvc.api;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.WriteResult;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +44,27 @@ public class StudentDataController {
         studentData.put("id", studentDoc.getId());
         
         return ResponseEntity.ok(studentData);
+    }
+
+    @PutMapping("/me/sandbox")
+    public ResponseEntity<?> saveSandbox(HttpSession session, @RequestBody Map<String, Object> sandboxData) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated student.");
+        }
+
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("sandbox", sandboxData);
+
+        ApiFuture<WriteResult> writeResult = firestore.collection("students").document(uid).update(updateData);
+        writeResult.get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Sandbox saved successfully");
+        
+        return ResponseEntity.ok(response);
     }
 }
 
