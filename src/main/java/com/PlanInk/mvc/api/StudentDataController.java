@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -63,6 +64,49 @@ public class StudentDataController {
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("message", "Sandbox saved successfully");
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/me/comments/{commentIndex}")
+    public ResponseEntity<?> resolveComment(
+            @PathVariable int commentIndex,
+            HttpSession session) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated student.");
+        }
+
+        ApiFuture<DocumentSnapshot> studentFuture = firestore.collection("students").document(uid).get();
+        DocumentSnapshot studentDoc = studentFuture.get(5, TimeUnit.SECONDS);
+
+        if (!studentDoc.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Student profile not found.");
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> comments = (List<Map<String, Object>>) studentDoc.get("comments");
+        
+        if (comments == null || commentIndex < 0 || commentIndex >= comments.size()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid comment index.");
+        }
+
+        // Remove the comment at the specified index
+        comments.remove(commentIndex);
+
+        // Update the comments array in Firestore
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("comments", comments);
+
+        ApiFuture<WriteResult> writeResult = firestore.collection("students").document(uid).update(updateData);
+        writeResult.get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Comment resolved successfully");
         
         return ResponseEntity.ok(response);
     }

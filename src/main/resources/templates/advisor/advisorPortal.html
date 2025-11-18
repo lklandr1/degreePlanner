@@ -285,6 +285,154 @@
             color: #999;
             font-style: normal;
         }
+        /* Student Management Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #14213D;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #14213D;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+        .modal-section {
+            margin-bottom: 30px;
+        }
+        .modal-section h3 {
+            color: #14213D;
+            margin-bottom: 15px;
+        }
+        .course-search-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .course-results {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .course-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .course-result-item:hover {
+            background-color: #f5f5f5;
+        }
+        .course-result-item input[type="checkbox"] {
+            cursor: pointer;
+        }
+        .selected-courses {
+            margin-top: 15px;
+        }
+        .selected-course {
+            display: inline-block;
+            background-color: #e3f2fd;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .selected-course .remove-course {
+            margin-left: 8px;
+            cursor: pointer;
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .comment-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .modal-button.primary {
+            background-color: #28a745;
+            color: white;
+        }
+        .modal-button.primary:hover {
+            background-color: #218838;
+        }
+        .modal-button.secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .modal-button.secondary:hover {
+            background-color: #5a6268;
+        }
+        tbody tr {
+            cursor: pointer;
+        }
+        tbody tr:hover {
+            background-color: #e8f4f8 !important;
+        }
     </style>
 </head>
 <body>
@@ -319,6 +467,67 @@
                 <tbody id="studentsBody">
                 </tbody>
             </table>
+        </div>
+
+        <!-- Student Management Modal -->
+        <div id="studentModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalStudentName">Student Management</h2>
+                    <button class="close-modal" onclick="closeStudentModal()">&times;</button>
+                </div>
+                
+                <div class="modal-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Add Completed Courses</h3>
+                        <button class="modal-button secondary" onclick="viewStudentData()" style="margin: 0;">View Existing Data</button>
+                    </div>
+                    <input type="text" class="course-search-input" id="courseSearchInput" placeholder="Search for courses...">
+                    <div class="course-results" id="courseResults"></div>
+                    <div class="selected-courses" id="selectedCourses">
+                        <strong>Selected Courses:</strong>
+                        <div id="selectedCoursesList"></div>
+                    </div>
+                    <button class="modal-button primary" onclick="saveCompletedCourses()">Save Courses</button>
+                </div>
+
+                <div class="modal-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Send Comment to Student</h3>
+                    </div>
+                    <textarea class="comment-textarea" id="commentText" placeholder="Enter your comment here..."></textarea>
+                    <button class="modal-button primary" onclick="sendComment()">Send Comment</button>
+                </div>
+
+                <!-- View Data Modal -->
+                <div id="viewDataModal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h2>Student Data</h2>
+                            <button class="close-modal" onclick="closeViewDataModal()">&times;</button>
+                        </div>
+                        <div class="modal-section">
+                            <h3>Completed Courses</h3>
+                            <div id="completedCoursesList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="modal-section">
+                            <h3>Sent Comments</h3>
+                            <div id="commentsList" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="modal-buttons">
+                            <button class="modal-button secondary" onclick="closeViewDataModal()">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button class="modal-button secondary" onclick="closeStudentModal()">Close</button>
+                </div>
+            </div>
         </div>
 
         <div id="changelogSection" class="changelog-section">
@@ -431,7 +640,7 @@
                     graduationDate = `${escapeHtml(student.graduationDate.semester)} ${escapeHtml(student.graduationDate.year)}`;
                 }
                 return `
-                <tr>
+                <tr onclick="openStudentModal('${escapeHtml(student.id)}', '${escapeHtml(student.name)}', '${escapeHtml(student.studentID)}')">
                     <td>${escapeHtml(student.studentID)}</td>
                     <td>${escapeHtml(student.name)}</td>
                     <td>${escapeHtml(student.email)}</td>
@@ -551,6 +760,317 @@
 
                 changelogList.appendChild(listItem);
             });
+        }
+
+        // Student Management Modal Functions
+        let currentStudentId = null;
+        let selectedCourses = new Set();
+        let courseCache = {};
+
+        async function openStudentModal(studentId, studentName, studentID) {
+            currentStudentId = studentId;
+            document.getElementById('modalStudentName').textContent = `${studentName} (${studentID})`;
+            document.getElementById('studentModal').classList.add('active');
+            selectedCourses.clear();
+            document.getElementById('selectedCoursesList').innerHTML = '';
+            document.getElementById('courseResults').innerHTML = '';
+            document.getElementById('courseSearchInput').value = '';
+            document.getElementById('commentText').value = '';
+            
+            // Load course cache if not already loaded
+            if (Object.keys(courseCache).length === 0) {
+                await loadCourseCache();
+            }
+        }
+
+        function closeStudentModal() {
+            document.getElementById('studentModal').classList.remove('active');
+            currentStudentId = null;
+            selectedCourses.clear();
+        }
+
+        async function loadCourseCache() {
+            try {
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
+                const courses = await response.json();
+                
+                courses.forEach(course => {
+                    const courseId = course.courseID || course.code || course.id;
+                    if (courseId) {
+                        courseCache[courseId] = course;
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load course cache:', error);
+            }
+        }
+
+        let searchTimeout = null;
+        document.getElementById('courseSearchInput')?.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            if (query.length < 2) {
+                document.getElementById('courseResults').innerHTML = '';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                performCourseSearch(query);
+            }, 300);
+        });
+
+        function performCourseSearch(query) {
+            const resultsDiv = document.getElementById('courseResults');
+            const searchTerm = query.toLowerCase();
+            
+            const filteredCourses = Object.values(courseCache).filter(course => {
+                const title = (course.title || '').toLowerCase();
+                const courseID = (course.courseID || '').toLowerCase();
+                const code = (course.code || '').toLowerCase();
+                
+                return title.includes(searchTerm) || 
+                       courseID.includes(searchTerm) || 
+                       code.includes(searchTerm);
+            }).slice(0, 20);
+
+            resultsDiv.innerHTML = '';
+            
+            if (filteredCourses.length === 0) {
+                resultsDiv.innerHTML = '<div style="padding: 10px; text-align: center; color: #666;">No courses found</div>';
+                return;
+            }
+
+            filteredCourses.forEach(course => {
+                const courseId = course.courseID || course.code || course.id;
+                if (!courseId) return;
+
+                const item = document.createElement('div');
+                item.className = 'course-result-item';
+                item.innerHTML = `
+                    <input type="checkbox" id="course-${courseId}" onchange="toggleCourse('${courseId}', '${(course.title || '').replace(/'/g, "\\'")}')">
+                    <label for="course-${courseId}" style="cursor: pointer; flex: 1;">
+                        <strong>${courseId}</strong> - ${course.title || 'Unknown Course'}
+                    </label>
+                `;
+                resultsDiv.appendChild(item);
+            });
+        }
+
+        function toggleCourse(courseId, courseTitle) {
+            const checkbox = document.getElementById(`course-${courseId}`);
+            if (checkbox.checked) {
+                selectedCourses.add(courseId);
+            } else {
+                selectedCourses.delete(courseId);
+            }
+            updateSelectedCoursesDisplay();
+        }
+
+        function updateSelectedCoursesDisplay() {
+            const listDiv = document.getElementById('selectedCoursesList');
+            listDiv.innerHTML = '';
+            
+            if (selectedCourses.size === 0) {
+                listDiv.innerHTML = '<span style="color: #999;">No courses selected</span>';
+                return;
+            }
+
+            selectedCourses.forEach(courseId => {
+                const course = courseCache[courseId];
+                const courseTitle = course ? course.title : 'Unknown Course';
+                const tag = document.createElement('span');
+                tag.className = 'selected-course';
+                tag.innerHTML = `${courseId} - ${courseTitle} <span class="remove-course" onclick="removeSelectedCourse('${courseId}')">×</span>`;
+                listDiv.appendChild(tag);
+            });
+        }
+
+        function removeSelectedCourse(courseId) {
+            selectedCourses.delete(courseId);
+            const checkbox = document.getElementById(`course-${courseId}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+            updateSelectedCoursesDisplay();
+        }
+
+        async function saveCompletedCourses() {
+            if (!currentStudentId) return;
+
+            try {
+                const coursesArray = Array.from(selectedCourses);
+                
+                const response = await fetch(`/api/secure/advisors/students/${currentStudentId}/completedCourses`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ courses: coursesArray })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to save courses');
+                }
+
+                alert(`Successfully added ${coursesArray.length} course(s) to student's completed courses!`);
+                selectedCourses.clear();
+                updateSelectedCoursesDisplay();
+            } catch (error) {
+                console.error('Error saving courses:', error);
+                alert('Error saving courses: ' + error.message);
+            }
+        }
+
+        async function sendComment() {
+            if (!currentStudentId) return;
+
+            const commentText = document.getElementById('commentText').value.trim();
+            if (!commentText) {
+                alert('Please enter a comment');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/secure/advisors/students/${currentStudentId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ comment: commentText })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to send comment');
+                }
+
+                alert('Comment sent successfully!');
+                document.getElementById('commentText').value = '';
+            } catch (error) {
+                console.error('Error sending comment:', error);
+                alert('Error sending comment: ' + error.message);
+            }
+        }
+
+        async function viewStudentData() {
+            if (!currentStudentId) return;
+
+            const viewDataModal = document.getElementById('viewDataModal');
+            const completedCoursesList = document.getElementById('completedCoursesList');
+            const commentsList = document.getElementById('commentsList');
+
+            viewDataModal.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/api/secure/advisors/students/${currentStudentId}/data`);
+                if (!response.ok) {
+                    throw new Error('Failed to load student data');
+                }
+
+                const data = await response.json();
+
+                // Display completed courses
+                if (data.completedCourses && Array.isArray(data.completedCourses) && data.completedCourses.length > 0) {
+                    completedCoursesList.innerHTML = data.completedCourses.map(courseId => {
+                        const course = courseCache[courseId];
+                        const courseTitle = course ? course.title : 'Unknown Course';
+                        const escapedCourseId = escapeHtml(courseId);
+                        const escapedTitle = escapeHtml(courseTitle);
+                        return `
+                            <div style="padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                                <div><strong>${escapedCourseId}</strong> - ${escapedTitle}</div>
+                                <button class="modal-button" style="background-color: #dc3545; padding: 5px 10px; font-size: 12px; margin: 0;" onclick="removeCompletedCourse('${escapedCourseId}')">Remove</button>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    completedCoursesList.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">No completed courses</div>';
+                }
+
+                // Display comments
+                if (data.comments && Array.isArray(data.comments) && data.comments.length > 0) {
+                    // Sort by timestamp (newest first)
+                    const sortedComments = [...data.comments].sort((a, b) => {
+                        const timeA = a.timestamp?.seconds || 0;
+                        const timeB = b.timestamp?.seconds || 0;
+                        return timeB - timeA;
+                    });
+
+                    commentsList.innerHTML = sortedComments.map(comment => {
+                        const date = comment.timestamp ? new Date(comment.timestamp.seconds * 1000) : new Date();
+                        const formattedDate = date.toLocaleString();
+                        return `
+                            <div style="padding: 10px; border-bottom: 1px solid #eee; margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <strong>${escapeHtml(comment.advisorName || 'Advisor')}</strong>
+                                    <span style="font-size: 12px; color: #666;">${formattedDate}</span>
+                                </div>
+                                <div style="color: #333;">${escapeHtml(comment.comment)}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    commentsList.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">No comments sent</div>';
+                }
+            } catch (error) {
+                console.error('Error loading student data:', error);
+                completedCoursesList.innerHTML = '<div style="color: #c33; text-align: center; padding: 20px;">Error loading data</div>';
+                commentsList.innerHTML = '<div style="color: #c33; text-align: center; padding: 20px;">Error loading data</div>';
+            }
+        }
+
+        function closeViewDataModal() {
+            document.getElementById('viewDataModal').style.display = 'none';
+        }
+
+        async function removeCompletedCourse(courseId) {
+            if (!currentStudentId) return;
+
+            if (!confirm(`Are you sure you want to remove ${courseId} from this student's completed courses?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/secure/advisors/students/${currentStudentId}/completedCourses/${encodeURIComponent(courseId)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to remove course');
+                }
+
+                // Reload student data to refresh the list
+                await viewStudentData();
+            } catch (error) {
+                console.error('Error removing course:', error);
+                alert('Error removing course: ' + error.message);
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('studentModal');
+            const viewDataModal = document.getElementById('viewDataModal');
+            if (event.target === modal) {
+                closeStudentModal();
+            }
+            if (event.target === viewDataModal) {
+                closeViewDataModal();
+            }
         }
 
         document.addEventListener('DOMContentLoaded', loadStudents);
