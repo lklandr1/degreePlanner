@@ -345,38 +345,10 @@
         <h1>Classes</h1>
         
         <div class="content">
-            <div class="columns-container">
-                <!-- Core Classes Column -->
-                <div class="column">
-                    <div class="column-header">Core Classes</div>
-                    <div class="search-container">
-                        <input type="text" id="coreSearch" placeholder="SEARCHBAR" onkeyup="filterCourses('core')">
-                    </div>
-                    <div class="course-list" id="coreList">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- Engineering Classes Column -->
-                <div class="column">
-                    <div class="column-header">Engineering Classes</div>
-                    <div class="search-container">
-                        <input type="text" id="engineeringSearch" placeholder="SEARCHBAR" onkeyup="filterCourses('engineering')">
-                    </div>
-                    <div class="course-list" id="engineeringList">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- All Classes Column -->
-                <div class="column">
-                    <div class="column-header">All Classes</div>
-                    <div class="search-container">
-                        <input type="text" id="allSearch" placeholder="SEARCHBAR" onkeyup="filterCourses('all')">
-                    </div>
-                    <div class="course-list" id="allList">
-                        <div class="loading">Loading...</div>
-                    </div>
+            <div class="columns-container" id="majorClassesContainer">
+                <!-- Major Requirements will be loaded here -->
+                <div class="loading" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    Loading major requirements...
                 </div>
             </div>
         </div>
@@ -432,185 +404,251 @@
 
     <script>
         // Data storage
-        let courseData = {
-            core: [],
-            engineering: [],
-            all: [],
-            coreFiltered: [],
-            engineeringFiltered: [],
-            allFiltered: []
-        };
-
-        // Engineering subjects to filter by
-        const engineeringSubjects = ['EE', 'ME', 'CE', 'AE', 'CHE', 'BE', 'ENG'];
+        let courseCache = {};
+        let studentData = null;
+        let majorRequirements = null;
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCourses();
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await loadCourseCache();
+                await loadStudentData();
+                await loadMajorRequirements();
+                renderMajorClasses();
+            } catch (error) {
+                console.error('Error initializing classes page:', error);
+                document.getElementById('majorClassesContainer').innerHTML = 
+                    '<div class="error" style="grid-column: 1 / -1;">Error loading classes. Please refresh the page.</div>';
+            }
         });
 
-        async function loadCourses() {
+        // Load and cache all courses
+        async function loadCourseCache() {
             try {
-                // Load all courses from catalog
-                const response = await fetch('/catalog?limit=500');
-                if (!response.ok) throw new Error('Failed to fetch courses');
-                
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
                 const courses = await response.json();
-                courseData.all = courses;
-                courseData.allFiltered = courses;
-
-                // Filter engineering courses by subject (EE, ME, CE, etc.)
-                courseData.engineering = courses.filter(course => {
-                    const subject = (course.subject || '').toUpperCase();
-                    return engineeringSubjects.includes(subject);
+                
+                courses.forEach(course => {
+                    if (course.courseID) {
+                        courseCache[course.courseID] = course;
+                    }
                 });
-                courseData.engineeringFiltered = courseData.engineering;
-
-                // Load core courses from the coreCourses collection
-                loadCoreCourses();
-
-                // Display the courses
-                displayCourses('engineering');
-                displayCourses('all');
+                console.log('Course cache loaded:', Object.keys(courseCache).length, 'courses');
             } catch (error) {
-                console.error('Error loading courses:', error);
-                document.getElementById('engineeringList').innerHTML = '<div class="error">Error loading courses</div>';
-                document.getElementById('allList').innerHTML = '<div class="error">Error loading courses</div>';
+                console.error('Failed to load course cache:', error);
+                throw error;
             }
         }
 
-        async function loadCoreCourses() {
-            try {
-                // Fetch core courses from the coreCourses collection via API
-                // For now, we'll use a workaround since we may not have a dedicated endpoint
-                // We'll fetch all courses and see if we can identify core courses
-                
-                // Try to fetch from a coreCourses endpoint if available
-                const response = await fetch('/api/coreCourses')
-                    .catch(err => {
-                        // If no dedicated endpoint, return empty array to be filled below
-                        return null;
-                    });
+        // Get course title by ID
+        function getCourseTitleById(courseId) {
+            const course = courseCache[courseId];
+            return course ? course.title : null;
+        }
 
-                if (response && response.ok) {
-                    const coreCourses = await response.json();
-                    courseData.core = coreCourses;
-                    courseData.coreFiltered = coreCourses;
-                    displayCourses('core');
-                } else {
-                    // Fallback: use search to find core courses
-                    const allCourses = courseData.all;
-                    const commonCoreSubjects = ['CIS', 'MTH', 'PHY', 'CHM', 'ENG', 'COM'];
-                    courseData.core = allCourses.filter(course => {
-                        const subject = (course.subject || '').toUpperCase();
-                        return commonCoreSubjects.includes(subject);
-                    });
-                    courseData.coreFiltered = courseData.core;
-                    displayCourses('core');
+        // Load student data
+        async function loadStudentData() {
+            try {
+                const response = await fetch('/api/secure/students/me');
+                if (!response.ok) throw new Error('Failed to load student data');
+                studentData = await response.json();
+            } catch (error) {
+                console.error('Failed to load student data:', error);
+                throw error;
+            }
+        }
+
+        // Load major requirements
+        async function loadMajorRequirements() {
+            try {
+                if (!studentData || !studentData.majorID) {
+                    throw new Error('Student major not found');
+                }
+
+                // Fetch all majors
+                const majorsResponse = await fetch('/api/majors');
+                if (!majorsResponse.ok) throw new Error('Failed to load majors');
+                const majors = await majorsResponse.json();
+
+                // Find the student's major
+                const major = majors.find(m => m.id === studentData.majorID || m.majorID === studentData.majorID);
+                if (!major) {
+                    throw new Error('Major not found');
+                }
+
+                majorRequirements = {
+                    requiredCourses: major.reqs?.courses || major.coreCourses || [],
+                    groups: []
+                };
+
+                // Load requirements groups if requirementsRef exists
+                if (major.requirementsRef) {
+                    const requirementsResponse = await fetch(`/api/requirements/${major.requirementsRef}`);
+                    if (requirementsResponse.ok) {
+                        const requirementsData = await requirementsResponse.json();
+                        if (requirementsData.groups && Array.isArray(requirementsData.groups)) {
+                            majorRequirements.groups = requirementsData.groups;
+                        }
+                    }
                 }
             } catch (error) {
-                console.error('Error loading core courses:', error);
-                // Show empty if there's an error
-                document.getElementById('coreList').innerHTML = '<div class="no-courses">No core courses loaded</div>';
+                console.error('Failed to load major requirements:', error);
+                throw error;
             }
         }
 
-        function displayCourses(columnType) {
-            const listId = columnType + 'List';
-            const listElement = document.getElementById(listId);
-            
-            let courses = [];
-            if (columnType === 'core') {
-                courses = courseData.coreFiltered;
-            } else if (columnType === 'engineering') {
-                courses = courseData.engineeringFiltered;
-            } else if (columnType === 'all') {
-                courses = courseData.allFiltered;
+        // Render major classes grouped by requirements
+        function renderMajorClasses() {
+            const container = document.getElementById('majorClassesContainer');
+            container.innerHTML = '';
+
+            if (!majorRequirements) {
+                container.innerHTML = '<div class="error" style="grid-column: 1 / -1;">No major requirements found</div>';
+                return;
             }
 
-            if (courses.length === 0) {
-                listElement.innerHTML = '<div class="no-courses">No courses found</div>';
+            // Render required courses group
+            if (majorRequirements.requiredCourses && majorRequirements.requiredCourses.length > 0) {
+                const column = createGroupColumn('Required Courses', majorRequirements.requiredCourses);
+                container.appendChild(column);
+            }
+
+            // Render elective groups
+            if (majorRequirements.groups && majorRequirements.groups.length > 0) {
+                majorRequirements.groups.forEach((group, index) => {
+                    if (group.courses && group.courses.length > 0) {
+                        const groupTitle = group.title || `Elective Group ${index + 1}`;
+                        const column = createGroupColumn(groupTitle, group.courses);
+                        container.appendChild(column);
+                    }
+                });
+            }
+
+            if (container.children.length === 0) {
+                container.innerHTML = '<div class="no-courses" style="grid-column: 1 / -1;">No major requirements available</div>';
+            }
+        }
+
+        // Create a column for a group of courses
+        function createGroupColumn(groupTitle, courseIds) {
+            const column = document.createElement('div');
+            column.className = 'column';
+            
+            const header = document.createElement('div');
+            header.className = 'column-header';
+            header.textContent = groupTitle;
+            column.appendChild(header);
+
+            const searchContainer = document.createElement('div');
+            searchContainer.className = 'search-container';
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Search courses...';
+            searchInput.addEventListener('input', function() {
+                filterGroupCourses(this.value.toLowerCase(), courseList);
+            });
+            searchContainer.appendChild(searchInput);
+            column.appendChild(searchContainer);
+
+            const courseList = document.createElement('div');
+            courseList.className = 'course-list';
+            courseList.id = `group-${groupTitle.replace(/\s+/g, '-')}-list`;
+            column.appendChild(courseList);
+
+            // Populate courses
+            displayGroupCourses(courseList, courseIds);
+
+            return column;
+        }
+
+        // Display courses in a group
+        function displayGroupCourses(listElement, courseIds) {
+            if (courseIds.length === 0) {
+                listElement.innerHTML = '<div class="no-courses">No courses in this group</div>';
                 return;
             }
 
             let html = '';
-            courses.forEach(course => {
-                // Build course code from subject and number
-                const subject = course.subject || '';
-                const number = course.number || '';
-                const courseCode = subject && number ? `${subject} ${number}` : (course.courseID || 'N/A');
-                
-                const title = course.title || 'Untitled';
-                const courseId = course.id || course.courseID || courseCode;
+            courseIds.forEach(courseId => {
+                const course = courseCache[courseId];
+                const courseTitle = course ? course.title : 'Unknown Course';
+                const courseCode = courseId;
                 
                 html += `
                     <div class="course-item" onclick="viewCourseDetails('${courseId}')">
                         <div class="course-code">${courseCode}</div>
-                        <div class="course-title">${title}</div>
+                        <div class="course-title">${courseTitle}</div>
                     </div>
                 `;
             });
 
             listElement.innerHTML = html;
+            listElement.dataset.allCourses = JSON.stringify(courseIds);
         }
 
-        function filterCourses(columnType) {
-            const searchId = columnType + 'Search';
-            const searchValue = document.getElementById(searchId).value.toLowerCase();
-
-            let sourceArray = [];
-            if (columnType === 'core') {
-                sourceArray = courseData.core;
-            } else if (columnType === 'engineering') {
-                sourceArray = courseData.engineering;
-            } else if (columnType === 'all') {
-                sourceArray = courseData.all;
+        // Filter courses in a group
+        function filterGroupCourses(searchTerm, listElement) {
+            const allCourses = JSON.parse(listElement.dataset.allCourses || '[]');
+            
+            if (!searchTerm) {
+                displayGroupCourses(listElement, allCourses);
+                return;
             }
 
-            if (searchValue === '') {
-                if (columnType === 'core') {
-                    courseData.coreFiltered = courseData.core;
-                } else if (columnType === 'engineering') {
-                    courseData.engineeringFiltered = courseData.engineering;
-                } else if (columnType === 'all') {
-                    courseData.allFiltered = courseData.all;
-                }
-            } else {
-                const filtered = sourceArray.filter(course => {
-                    const subject = (course.subject || '').toLowerCase();
-                    const number = (course.number || '').toLowerCase();
-                    const title = (course.title || '').toLowerCase();
-                    const description = (course.description || '').toLowerCase();
-                    const courseCode = subject + ' ' + number;
-                    
-                    return subject.includes(searchValue) || 
-                           number.includes(searchValue) || 
-                           courseCode.includes(searchValue) ||
-                           title.includes(searchValue) || 
-                           description.includes(searchValue);
-                });
+            const filtered = allCourses.filter(courseId => {
+                const course = courseCache[courseId];
+                const courseTitle = course ? course.title.toLowerCase() : '';
+                const courseCode = courseId.toLowerCase();
+                return courseCode.includes(searchTerm) || courseTitle.includes(searchTerm);
+            });
 
-                if (columnType === 'core') {
-                    courseData.coreFiltered = filtered;
-                } else if (columnType === 'engineering') {
-                    courseData.engineeringFiltered = filtered;
-                } else if (columnType === 'all') {
-                    courseData.allFiltered = filtered;
-                }
-            }
-
-            displayCourses(columnType);
+            displayGroupCourses(listElement, filtered);
         }
 
         function viewCourseDetails(courseId) {
-            // Fetch the course details from the API
-            fetch(`/courses/${courseId}`)
+            // First try to get from cache
+            let course = courseCache[courseId];
+            
+            if (course) {
+                displayCourseModal(course);
+                return;
+            }
+
+            // If not in cache, try to fetch from API
+            // Try /api/courses first (courses collection)
+            fetch(`/api/courses?limit=5000`)
                 .then(response => {
-                    if (!response.ok) throw new Error('Course not found');
+                    if (!response.ok) throw new Error('Failed to fetch courses');
                     return response.json();
                 })
+                .then(courses => {
+                    // Find the course in the response
+                    course = courses.find(c => 
+                        c.courseID === courseId || 
+                        c.code === courseId || 
+                        c.id === courseId
+                    );
+                    
+                    if (course) {
+                        // Cache it
+                        courseCache[courseId] = course;
+                        displayCourseModal(course);
+                    } else {
+                        // Try catalog endpoint as fallback
+                        return fetch(`/courses/${courseId}`);
+                    }
+                })
+                .then(response => {
+                    if (response && response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Course not found');
+                })
                 .then(course => {
-                    displayCourseModal(course);
+                    if (course) {
+                        displayCourseModal(course);
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching course details:', error);
@@ -619,17 +657,17 @@
         }
 
         function displayCourseModal(course) {
-            // Build course code
+            // Build course code - handle both catalog format (subject + number) and courses collection format (courseID)
             const subject = course.subject || '';
             const number = course.number || '';
-            const courseCode = subject && number ? `${subject} ${number}` : (course.courseID || 'N/A');
+            const courseCode = subject && number ? `${subject} ${number}` : (course.courseID || course.code || course.id || 'N/A');
 
             // Populate modal fields
-            document.getElementById('modalCourseTitle').textContent = course.title || 'Course Title';
+            document.getElementById('modalCourseTitle').textContent = course.title || course.name || 'Course Title';
             document.getElementById('modalCourseCode').textContent = courseCode;
             document.getElementById('fieldCourseCode').textContent = courseCode;
-            document.getElementById('fieldCourseID').textContent = course.courseID || course.id || 'N/A';
-            document.getElementById('fieldCredits').textContent = course.credits || 'N/A';
+            document.getElementById('fieldCourseID').textContent = course.courseID || course.code || course.id || 'N/A';
+            document.getElementById('fieldCredits').textContent = course.credits || course.creditHours || 'N/A';
 
             // Handle description
             if (course.description) {
@@ -642,11 +680,12 @@
 
             // Handle prerequisites
             const prereqSection = document.getElementById('prereqSection');
-            if (course.prereqs) {
+            if (course.prereqs || course.prerequisites) {
                 prereqSection.style.display = 'block';
-                const prereqText = typeof course.prereqs === 'string' 
-                    ? course.prereqs 
-                    : JSON.stringify(course.prereqs);
+                const prereqs = course.prereqs || course.prerequisites;
+                const prereqText = typeof prereqs === 'string' 
+                    ? prereqs 
+                    : (Array.isArray(prereqs) ? prereqs.join(', ') : JSON.stringify(prereqs));
                 document.getElementById('fieldPrereqs').textContent = prereqText;
                 document.getElementById('fieldPrereqs').classList.remove('not-available');
             } else {
