@@ -83,6 +83,64 @@
             color: #14213D;
             font-weight: 600;
         }
+        .comments-section {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #14213D;
+        }
+        .comments-section h2 {
+            color: #14213D;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .comment-item {
+            background-color: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #14213D;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .comment-author {
+            font-weight: bold;
+            color: #14213D;
+        }
+        .comment-date {
+            font-size: 12px;
+            color: #666;
+        }
+        .comment-text {
+            color: #333;
+            line-height: 1.6;
+        }
+        .no-comments {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+        .resolve-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 15px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        .resolve-button:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -106,6 +164,11 @@
                 Classes
             </button>
         </div>
+
+        <div class="comments-section" id="commentsSection" style="display: none;">
+            <h2>Advisor Comments</h2>
+            <div id="commentsList"></div>
+        </div>
     </div>
     <script>
         async function loadGraduationDate() {
@@ -128,12 +191,110 @@
                 } else {
                     graduationDateBox.style.display = 'none';
                 }
+
+                // Load comments
+                studentDataCache = studentData;
+                loadComments(studentData);
             } catch (error) {
                 console.error('Error loading graduation date:', error);
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadGraduationDate);
+        function loadComments(studentData) {
+            const commentsSection = document.getElementById('commentsSection');
+            const commentsList = document.getElementById('commentsList');
+
+            if (!studentData.comments || !Array.isArray(studentData.comments) || studentData.comments.length === 0) {
+                commentsSection.style.display = 'none';
+                return;
+            }
+
+            commentsSection.style.display = 'block';
+            commentsList.innerHTML = '';
+
+            // Create array with original indices before sorting
+            const commentsWithIndices = studentData.comments.map((comment, index) => ({
+                comment: comment,
+                originalIndex: index
+            }));
+
+            // Sort comments by timestamp (newest first)
+            const sortedComments = commentsWithIndices.sort((a, b) => {
+                const timeA = a.comment.timestamp?.seconds || 0;
+                const timeB = b.comment.timestamp?.seconds || 0;
+                return timeB - timeA;
+            });
+
+            sortedComments.forEach((item) => {
+                const comment = item.comment;
+                const originalIndex = item.originalIndex;
+                const commentDiv = document.createElement('div');
+                commentDiv.className = 'comment-item';
+
+                const date = comment.timestamp ? new Date(comment.timestamp.seconds * 1000) : new Date();
+                const formattedDate = date.toLocaleString();
+
+                commentDiv.innerHTML = `
+                    <div class="comment-header">
+                        <span class="comment-author">${escapeHtml(comment.advisorName || 'Advisor')}</span>
+                        <span class="comment-date">${formattedDate}</span>
+                    </div>
+                    <div class="comment-text">${escapeHtml(comment.comment)}</div>
+                    <button class="resolve-button" onclick="resolveComment(${originalIndex})">Mark as Resolved</button>
+                `;
+
+                commentsList.appendChild(commentDiv);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        let studentDataCache = null;
+
+        async function resolveComment(commentIndex) {
+            if (!confirm('Are you sure you want to mark this comment as resolved? It will be removed.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/secure/students/me/comments/${commentIndex}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to resolve comment');
+                }
+
+                // Reload student data to refresh comments
+                const response2 = await fetch('/api/secure/students/me');
+                if (response2.ok) {
+                    studentDataCache = await response2.json();
+                    loadComments(studentDataCache);
+                }
+            } catch (error) {
+                console.error('Error resolving comment:', error);
+                alert('Error resolving comment: ' + error.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadGraduationDate();
+            // Cache student data for comment resolution
+            try {
+                const response = await fetch('/api/secure/students/me');
+                if (response.ok) {
+                    studentDataCache = await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading student data cache:', error);
+            }
+        });
     </script>
 </body>
 </html>
