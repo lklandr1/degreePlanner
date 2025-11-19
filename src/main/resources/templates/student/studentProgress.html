@@ -77,6 +77,75 @@
         .nav-button:hover {
             background-color: #0d1a2e;
         }
+        .credits-summary {
+            background-color: #f8f9fa;
+            border: 2px solid #14213D;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .credits-summary h2 {
+            color: #14213D;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        .credits-total {
+            font-size: 36px;
+            font-weight: bold;
+            color: #14213D;
+            margin: 10px 0;
+        }
+        .completed-courses-section {
+            margin-top: 30px;
+        }
+        .completed-courses-section h2 {
+            color: #14213D;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        .courses-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .course-card {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            transition: box-shadow 0.2s;
+        }
+        .course-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .course-code {
+            font-weight: bold;
+            color: #14213D;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .course-title {
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .course-credits {
+            color: #666;
+            font-size: 14px;
+        }
+        .no-courses {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+            font-size: 18px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -87,6 +156,134 @@
         </button>
         <h1>Academic Progress</h1>
         <p>Track your academic progress, completed courses, and graduation requirements here.</p>
+        
+        <div class="content">
+            <div id="creditsSummary" class="credits-summary" style="display: none;">
+                <h2>Total Credits Completed</h2>
+                <div class="credits-total" id="creditsTotal">0</div>
+            </div>
+            
+            <div class="completed-courses-section">
+                <h2>Completed Courses</h2>
+                <div id="coursesContainer">
+                    <div class="loading">Loading courses...</div>
+                </div>
+            </div>
+        </div>
     </div>
+    
+    <script>
+        let courseCache = {};
+        let studentData = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await loadCourseCache();
+                await loadStudentData();
+                renderCompletedCourses();
+            } catch (error) {
+                console.error('Error loading progress data:', error);
+                document.getElementById('coursesContainer').innerHTML = 
+                    '<div class="no-courses">Error loading courses. Please refresh the page.</div>';
+            }
+        });
+
+        // Load and cache all courses
+        async function loadCourseCache() {
+            try {
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
+                const courses = await response.json();
+                
+                courses.forEach(course => {
+                    if (course.courseID) {
+                        courseCache[course.courseID] = course;
+                    }
+                });
+                console.log('Course cache loaded:', Object.keys(courseCache).length, 'courses');
+            } catch (error) {
+                console.error('Failed to load course cache:', error);
+                throw error;
+            }
+        }
+
+        // Load student data
+        async function loadStudentData() {
+            try {
+                const response = await fetch('/api/secure/students/me');
+                if (!response.ok) throw new Error('Failed to load student data');
+                studentData = await response.json();
+            } catch (error) {
+                console.error('Failed to load student data:', error);
+                throw error;
+            }
+        }
+
+        // Render completed courses and calculate total credits
+        function renderCompletedCourses() {
+            const container = document.getElementById('coursesContainer');
+            const creditsSummary = document.getElementById('creditsSummary');
+            const creditsTotal = document.getElementById('creditsTotal');
+            
+            const completedCourses = studentData?.completedCourses || [];
+            
+            if (completedCourses.length === 0) {
+                container.innerHTML = '<div class="no-courses">No Classes Completed Yet</div>';
+                creditsSummary.style.display = 'none';
+                return;
+            }
+
+            // Calculate total credits
+            let totalCredits = 0;
+            const coursesWithData = [];
+
+            completedCourses.forEach(courseId => {
+                const course = courseCache[courseId];
+                if (course) {
+                    const credits = parseFloat(course.credits) || 0;
+                    totalCredits += credits;
+                    coursesWithData.push({
+                        id: courseId,
+                        title: course.title || 'Unknown Course',
+                        credits: credits,
+                        code: course.code || course.courseID || courseId
+                    });
+                } else {
+                    // Course not in cache, still add it but with 0 credits
+                    coursesWithData.push({
+                        id: courseId,
+                        title: 'Unknown Course',
+                        credits: 0,
+                        code: courseId
+                    });
+                }
+            });
+
+            // Display total credits
+            creditsTotal.textContent = totalCredits.toFixed(1);
+            creditsSummary.style.display = 'block';
+
+            // Display courses
+            if (coursesWithData.length === 0) {
+                container.innerHTML = '<div class="no-courses">No Classes Completed Yet</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="courses-list"></div>';
+            const coursesList = container.querySelector('.courses-list');
+
+            coursesWithData.forEach(course => {
+                const card = document.createElement('div');
+                card.className = 'course-card';
+                card.innerHTML = `
+                    <div class="course-code">${course.code}</div>
+                    <div class="course-title">${course.title}</div>
+                    <div class="course-credits">${course.credits > 0 ? course.credits + ' credits' : 'Credits: N/A'}</div>
+                `;
+                coursesList.appendChild(card);
+            });
+        }
+    </script>
 </body>
 </html>
