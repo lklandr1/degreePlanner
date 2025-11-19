@@ -68,6 +68,55 @@ public class StudentDataController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/me/submitForReview")
+    public ResponseEntity<?> submitForReview(HttpSession session) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated student.");
+        }
+
+        // Set submission status to "pending"
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("scheduleSubmissionStatus", "pending");
+        updateData.put("scheduleSubmittedAt", com.google.cloud.Timestamp.now());
+
+        ApiFuture<WriteResult> writeResult = firestore.collection("students").document(uid).update(updateData);
+        writeResult.get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Schedule submitted for review successfully");
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me/approvedSchedule")
+    public ResponseEntity<?> getApprovedSchedule(HttpSession session) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated student.");
+        }
+
+        ApiFuture<DocumentSnapshot> studentFuture =
+                firestore.collection("students").document(uid).get();
+        DocumentSnapshot studentDoc = studentFuture.get(5, TimeUnit.SECONDS);
+
+        if (!studentDoc.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Student profile not found.");
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> approvedSchedule = (Map<String, Object>) studentDoc.get("approvedSchedule");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("approvedSchedule", approvedSchedule);
+        
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/me/comments/{commentIndex}")
     public ResponseEntity<?> resolveComment(
             @PathVariable int commentIndex,

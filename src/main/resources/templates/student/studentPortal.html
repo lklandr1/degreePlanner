@@ -163,6 +163,9 @@
             <button class="nav-button" onclick="window.location.href='student/classes'">
                 Classes
             </button>
+            <button class="nav-button" onclick="window.location.href='student/approvedSchedule'" id="approvedScheduleBtn" style="display: none;">
+                Approved Schedule
+            </button>
         </div>
 
         <div class="comments-section" id="commentsSection" style="display: none;">
@@ -190,6 +193,14 @@
                     graduationDateBox.style.display = 'block';
                 } else {
                     graduationDateBox.style.display = 'none';
+                }
+
+                // Show Approved Schedule button if approved schedule exists
+                const approvedScheduleBtn = document.getElementById('approvedScheduleBtn');
+                if (studentData.approvedSchedule) {
+                    approvedScheduleBtn.style.display = 'inline-block';
+                } else {
+                    approvedScheduleBtn.style.display = 'none';
                 }
 
                 // Load comments
