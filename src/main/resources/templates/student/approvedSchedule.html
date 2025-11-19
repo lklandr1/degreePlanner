@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Approved Schedule</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            min-height: calc(100vh - 40px);
+        }
+
+        h1 {
+            color: #14213D;
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 0;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #6c757d;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            z-index: 10;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #dc3545;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            z-index: 10;
+        }
+
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+
+        .info-banner {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #bee5eb;
+            text-align: center;
+        }
+
+        .semesters-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .semester-box {
+            border: 2px solid #14213D;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #fafafa;
+            min-height: 150px;
+        }
+
+        .semester-header {
+            font-weight: bold;
+            color: #14213D;
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .semester-courses {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .semester-courses li {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .course-code {
+            font-weight: 600;
+            color: #14213D;
+            margin-right: 8px;
+            font-size: 12px;
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            min-width: 60px;
+        }
+
+        .course-title {
+            flex: 1;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error-message {
+            background-color: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #c33;
+        }
+
+        .no-schedule {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button" onclick="window.location.href='/student'">← Back to Student Portal</button>
+        <button class="logout-button" onclick="window.location.href='/logout'">Logout</button>
+        
+        <h1>Approved Schedule</h1>
+        
+        <div class="info-banner">
+            This is your advisor-approved schedule. This schedule is read-only and cannot be edited.
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+        <div id="semestersContainer" class="semesters-container">
+            <div class="loading">Loading approved schedule...</div>
+        </div>
+    </div>
+
+    <script>
+        let courseCache = {};
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await loadCourseCache();
+                await loadApprovedSchedule();
+            } catch (error) {
+                console.error('Error initializing approved schedule:', error);
+                showError('Failed to load approved schedule. Please refresh the page.');
+            }
+        });
+
+        // Load and cache all courses
+        async function loadCourseCache() {
+            try {
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
+                const courses = await response.json();
+                
+                courses.forEach(course => {
+                    if (course.courseID) {
+                        courseCache[course.courseID] = course;
+                    }
+                });
+                console.log('Course cache loaded:', Object.keys(courseCache).length, 'courses');
+            } catch (error) {
+                console.error('Failed to load course cache:', error);
+                throw error;
+            }
+        }
+
+        // Get course title by ID
+        function getCourseTitleById(courseId) {
+            const course = courseCache[courseId];
+            return course ? course.title : null;
+        }
+
+        // Load approved schedule
+        async function loadApprovedSchedule() {
+            try {
+                const response = await fetch('/api/secure/students/me/approvedSchedule');
+                if (!response.ok) {
+                    throw new Error('Failed to load approved schedule');
+                }
+
+                const data = await response.json();
+                const approvedSchedule = data.approvedSchedule;
+
+                if (!approvedSchedule || !approvedSchedule.semesters || approvedSchedule.semesters.length === 0) {
+                    document.getElementById('semestersContainer').innerHTML = 
+                        '<div class="no-schedule">No approved schedule available.</div>';
+                    return;
+                }
+
+                renderSchedule(approvedSchedule);
+            } catch (error) {
+                console.error('Error loading approved schedule:', error);
+                showError('Failed to load approved schedule. Please try again.');
+            }
+        }
+
+        // Render approved schedule
+        function renderSchedule(schedule) {
+            const container = document.getElementById('semestersContainer');
+            container.innerHTML = '';
+
+            if (!schedule.semesters || schedule.semesters.length === 0) {
+                container.innerHTML = '<div class="no-schedule">No approved schedule available.</div>';
+                return;
+            }
+
+            schedule.semesters.forEach((semester, index) => {
+                const box = document.createElement('div');
+                box.className = 'semester-box';
+                
+                const header = document.createElement('div');
+                header.className = 'semester-header';
+                header.textContent = `${semester.semester} ${semester.year}`;
+                box.appendChild(header);
+
+                const coursesList = document.createElement('ul');
+                coursesList.className = 'semester-courses';
+
+                if (semester.courses && semester.courses.length > 0) {
+                    semester.courses.forEach(courseId => {
+                        const li = document.createElement('li');
+                        
+                        const code = document.createElement('span');
+                        code.className = 'course-code';
+                        code.textContent = courseId;
+                        
+                        const title = document.createElement('span');
+                        title.className = 'course-title';
+                        const courseTitle = getCourseTitleById(courseId);
+                        title.textContent = courseTitle || 'Unknown Course';
+                        
+                        li.appendChild(code);
+                        li.appendChild(title);
+                        coursesList.appendChild(li);
+                    });
+                } else {
+                    const emptyLi = document.createElement('li');
+                    emptyLi.style.cssText = 'border: none; padding: 20px; text-align: center; pointer-events: none; color: #999; font-style: italic; width: 100%;';
+                    emptyLi.textContent = 'No courses scheduled';
+                    coursesList.appendChild(emptyLi);
+                }
+
+                box.appendChild(coursesList);
+                container.appendChild(box);
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
+

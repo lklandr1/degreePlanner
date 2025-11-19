@@ -26,4 +26,9 @@ public class StudentController{
         return "student/studentClasses";
     }
 
+    @GetMapping("/student/approvedSchedule")
+    public String approvedSchedule() {
+        return "student/approvedSchedule";
+    }
+
 }

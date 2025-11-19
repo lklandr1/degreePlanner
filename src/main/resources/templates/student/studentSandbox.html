@@ -385,6 +385,29 @@
             cursor: not-allowed;
         }
 
+        .submit-button {
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 15px;
+            margin-left: 10px;
+        }
+
+        .submit-button:hover {
+            background-color: #e0a800;
+        }
+
+        .submit-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
         .semesters-header {
             display: flex;
             justify-content: space-between;
@@ -428,6 +451,7 @@
                     <h2 style="margin: 0; color: #14213D; font-size: 18px;">Semester Plan</h2>
                     <div>
                         <button class="save-button" onclick="saveSandbox()" id="saveButton">Save Schedule</button>
+                        <button class="submit-button" onclick="submitForReview()" id="submitButton">Submit for Review</button>
                         <button class="clear-button" onclick="clearAllSemesters()">Clear All Classes</button>
                     </div>
                 </div>
@@ -1018,6 +1042,73 @@
             } finally {
                 saveButton.disabled = false;
                 saveButton.textContent = originalText;
+            }
+        }
+
+        // Submit sandbox for review
+        async function submitForReview() {
+            const submitButton = document.getElementById('submitButton');
+            const originalText = submitButton.textContent;
+            
+            try {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
+
+                // First save the sandbox
+                const sandboxData = {
+                    semesters: semesterBoxes.map(box => ({
+                        semester: box.semester,
+                        year: box.year,
+                        courses: box.courses
+                    }))
+                };
+
+                // Save sandbox first
+                const saveResponse = await fetch('/api/secure/students/me/sandbox', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(sandboxData)
+                });
+
+                if (!saveResponse.ok) {
+                    throw new Error('Failed to save sandbox');
+                }
+
+                // Then submit for review
+                const submitResponse = await fetch('/api/secure/students/me/submitForReview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!submitResponse.ok) {
+                    throw new Error('Failed to submit for review');
+                }
+
+                const result = await submitResponse.json();
+                
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.style.cssText = 'background-color: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #bee5eb;';
+                successMsg.textContent = 'Schedule submitted for advisor review!';
+                
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.parentNode.insertBefore(successMsg, errorDiv);
+                
+                // Remove success message after 5 seconds
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 5000);
+
+            } catch (error) {
+                console.error('Error submitting for review:', error);
+                showError('Failed to submit schedule for review. Please try again.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
             }
         }
 

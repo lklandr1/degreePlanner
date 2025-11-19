@@ -72,6 +72,10 @@ public class AdvisorStudentsController {
                 row.put("graduationDate", graduationDate);
             }
             
+            // Include schedule submission status
+            String submissionStatus = doc.getString("scheduleSubmissionStatus");
+            row.put("scheduleSubmissionStatus", submissionStatus != null ? submissionStatus : "none");
+            
             students.add(row);
         }
 
@@ -297,6 +301,182 @@ public class AdvisorStudentsController {
         Map<String, Object> response = new HashMap<>();
         response.put("comments", studentData.get("comments"));
         response.put("completedCourses", studentData.get("completedCourses"));
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/students/{studentId}/submittedSchedule")
+    public ResponseEntity<?> getSubmittedSchedule(
+            @PathVariable String studentId,
+            HttpSession session) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated advisor.");
+        }
+
+        // Verify advisor has access to this student
+        ApiFuture<DocumentSnapshot> studentFuture = firestore.collection("students").document(studentId).get();
+        DocumentSnapshot studentDoc = studentFuture.get(5, TimeUnit.SECONDS);
+        
+        if (!studentDoc.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Student not found.");
+        }
+
+        // Verify advisor is assigned to this student
+        ApiFuture<DocumentSnapshot> advisorFuture = firestore.collection("advisors").document(uid).get();
+        DocumentSnapshot advisorDoc = advisorFuture.get(5, TimeUnit.SECONDS);
+        String advisorId = advisorDoc.getString("advisorID");
+        String studentAdvisorId = studentDoc.getString("advisorID");
+        
+        if (advisorId == null || !advisorId.equals(studentAdvisorId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You do not have access to this student.");
+        }
+
+        // Check if schedule is submitted for review
+        String submissionStatus = studentDoc.getString("scheduleSubmissionStatus");
+        if (!"pending".equals(submissionStatus)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("No schedule submitted for review.");
+        }
+
+        // Get sandbox data
+        @SuppressWarnings("unchecked")
+        Map<String, Object> sandbox = (Map<String, Object>) studentDoc.get("sandbox");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("sandbox", sandbox);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/students/{studentId}/acceptSchedule")
+    public ResponseEntity<?> acceptSchedule(
+            @PathVariable String studentId,
+            HttpSession session) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated advisor.");
+        }
+
+        // Verify advisor has access to this student
+        ApiFuture<DocumentSnapshot> studentFuture = firestore.collection("students").document(studentId).get();
+        DocumentSnapshot studentDoc = studentFuture.get(5, TimeUnit.SECONDS);
+        
+        if (!studentDoc.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Student not found.");
+        }
+
+        // Verify advisor is assigned to this student
+        ApiFuture<DocumentSnapshot> advisorFuture = firestore.collection("advisors").document(uid).get();
+        DocumentSnapshot advisorDoc = advisorFuture.get(5, TimeUnit.SECONDS);
+        String advisorId = advisorDoc.getString("advisorID");
+        String studentAdvisorId = studentDoc.getString("advisorID");
+        
+        if (advisorId == null || !advisorId.equals(studentAdvisorId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You do not have access to this student.");
+        }
+
+        // Check if schedule is submitted for review
+        String submissionStatus = studentDoc.getString("scheduleSubmissionStatus");
+        if (!"pending".equals(submissionStatus)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("No schedule submitted for review.");
+        }
+
+        // Get sandbox data and copy to approvedSchedule
+        @SuppressWarnings("unchecked")
+        Map<String, Object> sandbox = (Map<String, Object>) studentDoc.get("sandbox");
+        
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("approvedSchedule", sandbox);
+        updateData.put("scheduleSubmissionStatus", "accepted");
+        updateData.put("scheduleApprovedAt", Timestamp.now());
+
+        ApiFuture<WriteResult> writeResult = firestore.collection("students").document(studentId).update(updateData);
+        writeResult.get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Schedule accepted successfully");
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/students/{studentId}/rejectSchedule")
+    public ResponseEntity<?> rejectSchedule(
+            @PathVariable String studentId,
+            @RequestBody Map<String, Object> payload,
+            HttpSession session) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated advisor.");
+        }
+
+        // Verify advisor has access to this student
+        ApiFuture<DocumentSnapshot> studentFuture = firestore.collection("students").document(studentId).get();
+        DocumentSnapshot studentDoc = studentFuture.get(5, TimeUnit.SECONDS);
+        
+        if (!studentDoc.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Student not found.");
+        }
+
+        // Verify advisor is assigned to this student
+        ApiFuture<DocumentSnapshot> advisorFuture = firestore.collection("advisors").document(uid).get();
+        DocumentSnapshot advisorDoc = advisorFuture.get(5, TimeUnit.SECONDS);
+        String advisorId = advisorDoc.getString("advisorID");
+        String studentAdvisorId = studentDoc.getString("advisorID");
+        
+        if (advisorId == null || !advisorId.equals(studentAdvisorId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You do not have access to this student.");
+        }
+
+        // Check if schedule is submitted for review
+        String submissionStatus = studentDoc.getString("scheduleSubmissionStatus");
+        if (!"pending".equals(submissionStatus)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("No schedule submitted for review.");
+        }
+
+        String comment = (String) payload.get("comment");
+        if (comment == null || comment.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Comment is required for rejection.");
+        }
+
+        // Create comment object with timestamp
+        Map<String, Object> commentData = new HashMap<>();
+        commentData.put("comment", "Schedule Rejected: " + comment);
+        commentData.put("advisorId", advisorId);
+        commentData.put("advisorName", advisorDoc.getString("name"));
+        commentData.put("timestamp", Timestamp.now());
+
+        // Update student: add comment, clear submission status
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("scheduleSubmissionStatus", "rejected");
+        updateData.put("scheduleRejectedAt", Timestamp.now());
+
+        // Add comment and update status in one transaction
+        ApiFuture<WriteResult> writeResult = firestore.collection("students").document(studentId)
+                .update(updateData);
+        writeResult.get(5, TimeUnit.SECONDS);
+
+        // Add comment separately
+        ApiFuture<WriteResult> commentResult = firestore.collection("students").document(studentId)
+                .update("comments", FieldValue.arrayUnion(commentData));
+        commentResult.get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Schedule rejected and comment sent");
         
         return ResponseEntity.ok(response);
     }

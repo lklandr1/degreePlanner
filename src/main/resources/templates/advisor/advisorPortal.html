@@ -433,6 +433,30 @@
         tbody tr:hover {
             background-color: #e8f4f8 !important;
         }
+        tbody tr.pending-review {
+            background-color: #fff3cd !important;
+        }
+        tbody tr.pending-review:hover {
+            background-color: #ffe69c !important;
+        }
+        .filter-toggle {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #ffc107;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 15px;
+        }
+        .filter-toggle:hover {
+            background-color: #e0a800;
+        }
+        .filter-toggle.active {
+            background-color: #ff9800;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -452,7 +476,10 @@
 
         <div id="mainSection" class="students-section">
             <h2>Your Students</h2>
-            <input id="studentSearch" class="search-input" type="text" placeholder="Search students by name, email, or ID...">
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                <button id="filterPendingBtn" class="filter-toggle" onclick="togglePendingFilter()">Show Pending Reviews</button>
+                <input id="studentSearch" class="search-input" type="text" placeholder="Search students by name, email, or ID..." style="flex: 1;">
+            </div>
             <div id="studentsStatus" class="status info">Loading students...</div>
             <table id="studentsTable" style="display:none;">
                 <thead>
@@ -489,6 +516,13 @@
                         <div id="selectedCoursesList"></div>
                     </div>
                     <button class="modal-button primary" onclick="saveCompletedCourses()">Save Courses</button>
+                </div>
+
+                <div class="modal-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Schedule Review</h3>
+                    </div>
+                    <button id="reviewScheduleBtn" class="modal-button primary" onclick="reviewSchedule()" style="display: none; margin-bottom: 15px;">Review Schedule</button>
                 </div>
 
                 <div class="modal-section">
@@ -530,6 +564,39 @@
             </div>
         </div>
 
+        <!-- Schedule Review Modal -->
+        <div id="scheduleReviewModal" class="modal">
+            <div class="modal-content" style="max-width: 1000px;">
+                <div class="modal-header">
+                    <h2 id="reviewModalStudentName">Review Schedule</h2>
+                    <button class="close-modal" onclick="closeScheduleReviewModal()">&times;</button>
+                </div>
+                
+                <div class="modal-section">
+                    <div id="reviewScheduleContent" style="max-height: 600px; overflow-y: auto;">
+                        <div class="loading">Loading schedule...</div>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h3>Review Actions</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="modal-button primary" onclick="acceptSchedule()" style="background-color: #28a745;">Accept Schedule</button>
+                        <button class="modal-button" onclick="showRejectForm()" style="background-color: #dc3545; color: white;">Reject Schedule</button>
+                    </div>
+                    <div id="rejectForm" style="display: none; margin-top: 15px;">
+                        <textarea class="comment-textarea" id="rejectComment" placeholder="Enter reason for rejection..."></textarea>
+                        <button class="modal-button" onclick="rejectSchedule()" style="background-color: #dc3545; color: white; margin-top: 10px;">Submit Rejection</button>
+                        <button class="modal-button secondary" onclick="hideRejectForm()" style="margin-top: 10px;">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button class="modal-button secondary" onclick="closeScheduleReviewModal()">Close</button>
+                </div>
+            </div>
+        </div>
+
         <div id="changelogSection" class="changelog-section">
             <button class="back-to-main" onclick="hideChangelogSection()">← Back to Main</button>
             <h2>Curriculum Changes</h2>
@@ -557,13 +624,13 @@
         let allChanges = [];
         let filteredChanges = [];
         let currentPage = 1;
+        let studentsCache = [];
 
         async function loadStudents() {
             const statusEl = document.getElementById('studentsStatus');
             const table = document.getElementById('studentsTable');
             const tbody = document.getElementById('studentsBody');
             const searchInput = document.getElementById('studentSearch');
-            let studentsCache = [];
 
             try {
                 const response = await fetch('/api/secure/advisors/me/students');
@@ -626,7 +693,25 @@
             }
         }
 
-        function renderStudents(students, tbody, table) {
+        let showPendingOnly = false;
+
+        function togglePendingFilter() {
+            showPendingOnly = !showPendingOnly;
+            const filterBtn = document.getElementById('filterPendingBtn');
+            if (showPendingOnly) {
+                filterBtn.textContent = 'Show All Students';
+                filterBtn.classList.add('active');
+            } else {
+                filterBtn.textContent = 'Show Pending Reviews';
+                filterBtn.classList.remove('active');
+            }
+            // Re-render with current filter
+            if (studentsCache) {
+                renderStudents(studentsCache, document.getElementById('studentsBody'), document.getElementById('studentsTable'), document.getElementById('studentsStatus'));
+            }
+        }
+
+        function renderStudents(students, tbody, table, statusEl) {
             const escapeHtml = value => String(value ?? '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
@@ -634,13 +719,30 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
 
-            tbody.innerHTML = students.map(student => {
+            // Filter students if pending filter is active
+            let filteredStudents = students;
+            if (showPendingOnly) {
+                filteredStudents = students.filter(student => student.scheduleSubmissionStatus === 'pending');
+            }
+
+            if (filteredStudents.length === 0) {
+                tbody.innerHTML = '';
+                table.style.display = 'none';
+                if (statusEl) {
+                    statusEl.textContent = showPendingOnly ? 'No students with pending reviews.' : 'No students found.';
+                    statusEl.className = 'status info';
+                }
+                return;
+            }
+
+            tbody.innerHTML = filteredStudents.map(student => {
                 let graduationDate = 'N/A';
                 if (student.graduationDate && student.graduationDate.semester && student.graduationDate.year) {
                     graduationDate = `${escapeHtml(student.graduationDate.semester)} ${escapeHtml(student.graduationDate.year)}`;
                 }
+                const pendingClass = student.scheduleSubmissionStatus === 'pending' ? 'pending-review' : '';
                 return `
-                <tr onclick="openStudentModal('${escapeHtml(student.id)}', '${escapeHtml(student.name)}', '${escapeHtml(student.studentID)}')">
+                <tr class="${pendingClass}" onclick="openStudentModal('${escapeHtml(student.id)}', '${escapeHtml(student.name)}', '${escapeHtml(student.studentID)}', '${escapeHtml(student.scheduleSubmissionStatus || 'none')}')">
                     <td>${escapeHtml(student.studentID)}</td>
                     <td>${escapeHtml(student.name)}</td>
                     <td>${escapeHtml(student.email)}</td>
@@ -650,6 +752,9 @@
             `;
             }).join('');
             table.style.display = 'table';
+            if (statusEl) {
+                statusEl.textContent = '';
+            }
         }
 
         // Changelog functions
@@ -764,11 +869,13 @@
 
         // Student Management Modal Functions
         let currentStudentId = null;
+        let currentSubmissionStatus = null;
         let selectedCourses = new Set();
         let courseCache = {};
 
-        async function openStudentModal(studentId, studentName, studentID) {
+        async function openStudentModal(studentId, studentName, studentID, submissionStatus) {
             currentStudentId = studentId;
+            currentSubmissionStatus = submissionStatus || 'none';
             document.getElementById('modalStudentName').textContent = `${studentName} (${studentID})`;
             document.getElementById('studentModal').classList.add('active');
             selectedCourses.clear();
@@ -776,6 +883,16 @@
             document.getElementById('courseResults').innerHTML = '';
             document.getElementById('courseSearchInput').value = '';
             document.getElementById('commentText').value = '';
+            
+            // Show/hide Review Schedule button based on submission status
+            const reviewBtn = document.getElementById('reviewScheduleBtn');
+            if (reviewBtn) {
+                if (currentSubmissionStatus === 'pending') {
+                    reviewBtn.style.display = 'block';
+                } else {
+                    reviewBtn.style.display = 'none';
+                }
+            }
             
             // Load course cache if not already loaded
             if (Object.keys(courseCache).length === 0) {
@@ -1061,15 +1178,166 @@
             return div.innerHTML;
         }
 
+        // Schedule Review Functions
+        async function reviewSchedule() {
+            if (!currentStudentId) return;
+
+            const reviewModal = document.getElementById('scheduleReviewModal');
+            const reviewContent = document.getElementById('reviewScheduleContent');
+            const reviewModalStudentName = document.getElementById('reviewModalStudentName');
+            
+            // Get student name from modal
+            const studentName = document.getElementById('modalStudentName').textContent;
+            reviewModalStudentName.textContent = `Review Schedule - ${studentName}`;
+            
+            reviewModal.classList.add('active');
+            reviewContent.innerHTML = '<div class="loading">Loading schedule...</div>';
+
+            try {
+                const response = await fetch(`/api/secure/advisors/students/${currentStudentId}/submittedSchedule`);
+                if (!response.ok) {
+                    throw new Error('Failed to load schedule');
+                }
+
+                const data = await response.json();
+                const sandbox = data.sandbox;
+
+                if (!sandbox || !sandbox.semesters || sandbox.semesters.length === 0) {
+                    reviewContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No schedule submitted.</div>';
+                    return;
+                }
+
+                // Render schedule similar to sandbox view
+                let scheduleHtml = '<div style="display: flex; flex-direction: column; gap: 15px;">';
+                
+                sandbox.semesters.forEach((semester, index) => {
+                    scheduleHtml += `
+                        <div style="border: 2px solid #14213D; border-radius: 8px; padding: 15px; background-color: #fafafa;">
+                            <div style="font-weight: bold; color: #14213D; font-size: 16px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #ddd;">
+                                ${semester.semester} ${semester.year}
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    `;
+                    
+                    if (semester.courses && semester.courses.length > 0) {
+                        semester.courses.forEach(courseId => {
+                            const course = courseCache[courseId];
+                            const courseTitle = course ? course.title : 'Unknown Course';
+                            scheduleHtml += `
+                                <div style="background-color: white; border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; font-size: 13px;">
+                                    <strong style="color: #14213D;">${courseId}</strong> - ${courseTitle}
+                                </div>
+                            `;
+                        });
+                    } else {
+                        scheduleHtml += '<div style="color: #999; font-style: italic;">No courses scheduled</div>';
+                    }
+                    
+                    scheduleHtml += '</div></div>';
+                });
+                
+                scheduleHtml += '</div>';
+                reviewContent.innerHTML = scheduleHtml;
+
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+                reviewContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #c33;">Error loading schedule: ' + error.message + '</div>';
+            }
+        }
+
+        function closeScheduleReviewModal() {
+            document.getElementById('scheduleReviewModal').classList.remove('active');
+            document.getElementById('rejectForm').style.display = 'none';
+            document.getElementById('rejectComment').value = '';
+        }
+
+        function showRejectForm() {
+            document.getElementById('rejectForm').style.display = 'block';
+        }
+
+        function hideRejectForm() {
+            document.getElementById('rejectForm').style.display = 'none';
+            document.getElementById('rejectComment').value = '';
+        }
+
+        async function acceptSchedule() {
+            if (!currentStudentId) return;
+
+            if (!confirm('Are you sure you want to accept this schedule? It will become the student\'s approved schedule.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/secure/advisors/students/${currentStudentId}/acceptSchedule`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to accept schedule');
+                }
+
+                alert('Schedule accepted successfully!');
+                closeScheduleReviewModal();
+                closeStudentModal();
+                // Reload students to update status
+                loadStudents();
+            } catch (error) {
+                console.error('Error accepting schedule:', error);
+                alert('Error accepting schedule: ' + error.message);
+            }
+        }
+
+        async function rejectSchedule() {
+            if (!currentStudentId) return;
+
+            const rejectComment = document.getElementById('rejectComment').value.trim();
+            if (!rejectComment) {
+                alert('Please enter a reason for rejection.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/secure/advisors/students/${currentStudentId}/rejectSchedule`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ comment: rejectComment })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to reject schedule');
+                }
+
+                alert('Schedule rejected. Comment sent to student.');
+                closeScheduleReviewModal();
+                closeStudentModal();
+                // Reload students to update status
+                loadStudents();
+            } catch (error) {
+                console.error('Error rejecting schedule:', error);
+                alert('Error rejecting schedule: ' + error.message);
+            }
+        }
+
         // Close modal when clicking outside
         window.onclick = function(event) {
             const modal = document.getElementById('studentModal');
             const viewDataModal = document.getElementById('viewDataModal');
+            const scheduleReviewModal = document.getElementById('scheduleReviewModal');
             if (event.target === modal) {
                 closeStudentModal();
             }
             if (event.target === viewDataModal) {
                 closeViewDataModal();
+            }
+            if (event.target === scheduleReviewModal) {
+                closeScheduleReviewModal();
             }
         }
 
