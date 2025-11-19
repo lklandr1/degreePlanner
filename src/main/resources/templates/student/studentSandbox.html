@@ -712,6 +712,101 @@
             return previousIndices;
         }
 
+        // Parse prerequisites from course data (handles string or array format)
+        function parsePrerequisites(course) {
+            if (!course) return [];
+            
+            const prereqs = course.prereqs || course.prerequisites;
+            if (!prereqs) return [];
+            
+            if (Array.isArray(prereqs)) {
+                return prereqs;
+            }
+            
+            if (typeof prereqs === 'string') {
+                // Parse comma-separated string, trim whitespace
+                return prereqs.split(',').map(p => p.trim()).filter(p => p.length > 0);
+            }
+            
+            return [];
+        }
+
+        // Get all courses from previous semesters (up to but not including currentSemesterIndex)
+        function getCoursesFromPreviousSemesters(currentSemesterIndex) {
+            const previousCourses = [];
+            for (let i = 0; i < currentSemesterIndex; i++) {
+                if (semesterBoxes[i] && semesterBoxes[i].courses) {
+                    previousCourses.push(...semesterBoxes[i].courses);
+                }
+            }
+            return previousCourses;
+        }
+
+        // Get all courses from the same semester (excluding the current course)
+        function getCoursesFromSameSemester(semesterIndex, excludeCourseId) {
+            if (semesterIndex < 0 || !semesterBoxes[semesterIndex]) {
+                return [];
+            }
+            const sameSemesterCourses = semesterBoxes[semesterIndex].courses || [];
+            // Exclude the current course being checked
+            return sameSemesterCourses.filter(id => id !== excludeCourseId);
+        }
+
+        // Check if prerequisites are met for a course
+        // Returns { met: boolean, missing: string[] }
+        function checkPrerequisites(courseId, semesterIndex) {
+            const course = courseCache[courseId];
+            if (!course) {
+                // If course not in cache, assume prerequisites are met (can't check)
+                return { met: true, missing: [] };
+            }
+
+            const prerequisites = parsePrerequisites(course);
+            if (prerequisites.length === 0) {
+                // No prerequisites, so they're met
+                return { met: true, missing: [] };
+            }
+
+            // Get completed courses from student data
+            const completedCourses = studentData?.completedCourses || [];
+            
+            // Get courses from previous semesters in sandbox
+            const previousSemesterCourses = getCoursesFromPreviousSemesters(semesterIndex);
+            
+            // Get courses from the same semester (allows concurrent prerequisites)
+            const sameSemesterCourses = getCoursesFromSameSemester(semesterIndex, courseId);
+            
+            // Combine completed courses, previous semester courses, and same semester courses
+            const availableCourses = [...completedCourses, ...previousSemesterCourses, ...sameSemesterCourses];
+            
+            // Check which prerequisites are missing
+            const missing = prerequisites.filter(prereq => {
+                // Normalize prerequisite (might be courseID or code)
+                const normalizedPrereq = prereq.trim().toUpperCase();
+                
+                // Check if prerequisite is in available courses
+                return !availableCourses.some(availableId => {
+                    const availableCourse = courseCache[availableId];
+                    if (!availableCourse) {
+                        // If not in cache, compare IDs directly
+                        return availableId.toUpperCase() === normalizedPrereq;
+                    }
+                    
+                    // Check both courseID and code
+                    const courseIdMatch = (availableCourse.courseID || '').toUpperCase() === normalizedPrereq;
+                    const codeMatch = (availableCourse.code || '').toUpperCase() === normalizedPrereq;
+                    const idMatch = (availableId || '').toUpperCase() === normalizedPrereq;
+                    
+                    return courseIdMatch || codeMatch || idMatch;
+                });
+            });
+
+            return {
+                met: missing.length === 0,
+                missing: missing
+            };
+        }
+
         // Create a course list item element
         function createCourseElement(courseId, type, semesterIndex = null) {
             const li = document.createElement('li');
@@ -737,8 +832,9 @@
             li.appendChild(code);
             li.appendChild(title);
 
-            // Add warning icon if course is scheduled in previous semesters
+            // Add warning icons for semester courses
             if (type === 'semester' && semesterIndex !== null) {
+                // Check if course is scheduled in previous semesters
                 const previousIndices = getPreviousSemesterIndices(courseId, semesterIndex);
                 if (previousIndices.length > 0) {
                     const warning = document.createElement('span');
@@ -752,6 +848,23 @@
                     warning.appendChild(tooltip);
                     
                     li.appendChild(warning);
+                }
+                
+                // Check if prerequisites are unmet
+                const prereqCheck = checkPrerequisites(courseId, semesterIndex);
+                if (!prereqCheck.met) {
+                    const prereqWarning = document.createElement('span');
+                    prereqWarning.className = 'warning-icon';
+                    prereqWarning.style.color = '#dc3545';
+                    prereqWarning.innerHTML = '⚠️';
+                    prereqWarning.title = `Missing prerequisites: ${prereqCheck.missing.join(', ')}`;
+                    
+                    const prereqTooltip = document.createElement('span');
+                    prereqTooltip.className = 'warning-tooltip';
+                    prereqTooltip.textContent = `Missing prerequisites: ${prereqCheck.missing.join(', ')}`;
+                    prereqWarning.appendChild(prereqTooltip);
+                    
+                    li.appendChild(prereqWarning);
                 }
             }
 
@@ -906,6 +1019,16 @@
             
             const semesterIndex = parseInt(semesterBox.dataset.semesterIndex);
             if (isNaN(semesterIndex)) return;
+
+            // Check prerequisites before adding
+            const prereqCheck = checkPrerequisites(courseId, semesterIndex);
+            if (!prereqCheck.met) {
+                // Show error message about missing prerequisites
+                const missingList = prereqCheck.missing.join(', ');
+                const courseTitle = getCourseTitleById(courseId) || courseId;
+                showError(`Cannot add ${courseId} (${courseTitle}): Missing prerequisites: ${missingList}. Please ensure prerequisites are in completed courses or previous semesters.`);
+                return false;
+            }
 
             // Remove course from source semester if it was in a semester box
             if (draggedFromList && draggedFromList.classList.contains('semester-courses')) {
