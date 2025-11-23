@@ -107,4 +107,66 @@ public class CatalogController {
         m.put("id", snap.getId());
         return m;
     }
+
+    // PUT /api/requirements/{id} -> update a requirements document in the requirements collection
+    @PutMapping("/api/requirements/{id}")
+    public Map<String,Object> updateRequirements(@PathVariable String id, @RequestBody Map<String,Object> payload) throws Exception {
+        Firestore db = FirestoreClient.getFirestore();
+        DocumentReference docRef = db.collection("requirements").document(id);
+        
+        // Get existing document
+        DocumentSnapshot existing = docRef.get().get(5, TimeUnit.SECONDS);
+        if (!existing.exists()) {
+            throw new NoSuchElementException("Requirements not found: " + id);
+        }
+        
+        Map<String,Object> existingData = new HashMap<>(existing.getData() != null ? existing.getData() : Map.of());
+        
+        // Get groups from payload (only changed groups)
+        @SuppressWarnings("unchecked")
+        List<Map<String,Object>> changedGroups = (List<Map<String,Object>>) payload.get("groups");
+        
+        if (changedGroups != null) {
+            // Get existing groups
+            @SuppressWarnings("unchecked")
+            List<Map<String,Object>> existingGroups = (List<Map<String,Object>>) existingData.getOrDefault("groups", new ArrayList<>());
+            
+            // Create a map of existing groups by title for easy lookup
+            Map<String,Map<String,Object>> groupsByTitle = new HashMap<>();
+            for (Map<String,Object> group : existingGroups) {
+                String title = (String) group.get("title");
+                if (title != null) {
+                    groupsByTitle.put(title, group);
+                }
+            }
+            
+            // Update or add changed groups
+            for (Map<String,Object> changedGroup : changedGroups) {
+                String title = (String) changedGroup.get("title");
+                if (title != null) {
+                    @SuppressWarnings("unchecked")
+                    List<Object> courses = (List<Object>) changedGroup.get("courses");
+                    // If courses is empty, remove the group; otherwise update/add it
+                    if (courses != null && courses.isEmpty()) {
+                        groupsByTitle.remove(title);
+                    } else {
+                        groupsByTitle.put(title, changedGroup);
+                    }
+                }
+            }
+            
+            // Convert back to list
+            existingData.put("groups", new ArrayList<>(groupsByTitle.values()));
+        }
+        
+        // Update the document
+        ApiFuture<WriteResult> future = docRef.set(existingData);
+        future.get(5, TimeUnit.SECONDS);
+        
+        Map<String,Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Requirements updated successfully");
+        response.put("id", id);
+        return response;
+    }
 }
