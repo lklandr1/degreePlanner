@@ -11,13 +11,13 @@ public class AdvisorController {
         return "advisor/advisorPortal";
     }
 
-    @GetMapping("/advisor/individualStudents")
-    public String individualStudentAdvisor() {
-        return "advisor/individualStudentAdvisor";
-    }
-
     @GetMapping("/advisor/curriculumUpdates")
     public String changesAdvisor() {
         return "advisor/advisorChanges";
+    }
+
+    @GetMapping("/advisor/courseReview")
+    public String courseReview() {
+        return "advisor/courseReview";
     }
 }

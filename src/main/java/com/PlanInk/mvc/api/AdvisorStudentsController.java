@@ -480,5 +480,226 @@ public class AdvisorStudentsController {
         
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/me/studentsNeedingReview")
+    public ResponseEntity<?> getStudentsNeedingReview(HttpSession session) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated advisor.");
+        }
+
+        // Verify advisor exists
+        ApiFuture<DocumentSnapshot> advisorFuture = firestore.collection("advisors").document(uid).get();
+        DocumentSnapshot advisorDoc = advisorFuture.get(5, TimeUnit.SECONDS);
+        
+        if (!advisorDoc.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Advisor profile not found.");
+        }
+
+        String advisorId = advisorDoc.getString("advisorID");
+        if (advisorId == null || advisorId.isBlank()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        // Get current semester to determine previous semester
+        ApiFuture<QuerySnapshot> currentSemesterFuture = firestore.collection("currentYearSemester").get();
+        QuerySnapshot currentSemesterSnapshot = currentSemesterFuture.get(5, TimeUnit.SECONDS);
+        
+        if (currentSemesterSnapshot.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Current semester not found.");
+        }
+        
+        QueryDocumentSnapshot currentSemesterDoc = currentSemesterSnapshot.getDocuments().get(0);
+        String currentSemester = currentSemesterDoc.getString("semester");
+        Object yearObj = currentSemesterDoc.get("year");
+        
+        if (currentSemester == null || yearObj == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid semester data.");
+        }
+        
+        // Handle year as either Number or String
+        int currentYear;
+        if (yearObj instanceof Number) {
+            currentYear = ((Number) yearObj).intValue();
+        } else if (yearObj instanceof String) {
+            try {
+                currentYear = Integer.parseInt((String) yearObj);
+            } catch (NumberFormatException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Invalid year format in database: " + yearObj);
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Year must be a number or numeric string, got: " + yearObj.getClass().getSimpleName());
+        }
+        String normalizedCurrentSemester = normalizeSemester(currentSemester);
+        
+        // Calculate previous semester
+        String previousSemester;
+        int previousYear;
+        
+        if ("Spring".equalsIgnoreCase(normalizedCurrentSemester)) {
+            previousSemester = "Fall";
+            previousYear = currentYear;
+        } else {
+            previousSemester = "Spring";
+            previousYear = currentYear - 1;
+        }
+
+        // Get all students assigned to this advisor
+        ApiFuture<QuerySnapshot> studentsFuture = firestore.collection("students")
+                .whereEqualTo("advisorID", advisorId)
+                .get();
+        List<QueryDocumentSnapshot> studentDocs = studentsFuture.get(10, TimeUnit.SECONDS).getDocuments();
+
+        List<Map<String, Object>> studentsNeedingReview = new ArrayList<>();
+        
+        for (QueryDocumentSnapshot studentDoc : studentDocs) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> approvedSchedule = (Map<String, Object>) studentDoc.get("approvedSchedule");
+            
+            if (approvedSchedule == null) {
+                continue;
+            }
+            
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> semesters = (List<Map<String, Object>>) approvedSchedule.get("semesters");
+            
+            if (semesters == null) {
+                continue;
+            }
+            
+            // Find courses in the previous semester
+            List<String> coursesInPreviousSemester = new ArrayList<>();
+            for (Map<String, Object> sem : semesters) {
+                String semSemester = normalizeSemester((String) sem.get("semester"));
+                Object semYearObj = sem.get("year");
+                
+                // Handle year as either Number or String
+                int semYear = 0;
+                if (semYearObj instanceof Number) {
+                    semYear = ((Number) semYearObj).intValue();
+                } else if (semYearObj instanceof String) {
+                    try {
+                        semYear = Integer.parseInt((String) semYearObj);
+                    } catch (NumberFormatException e) {
+                        // Skip this semester if year is invalid
+                        continue;
+                    }
+                }
+                
+                if (semSemester != null && semSemester.equalsIgnoreCase(previousSemester) && semYear == previousYear) {
+                    @SuppressWarnings("unchecked")
+                    List<String> courses = (List<String>) sem.get("courses");
+                    if (courses != null && !courses.isEmpty()) {
+                        coursesInPreviousSemester.addAll(courses);
+                    }
+                }
+            }
+            
+            if (!coursesInPreviousSemester.isEmpty()) {
+                // Get existing completed courses to mark which are already completed
+                @SuppressWarnings("unchecked")
+                List<String> completedCourses = (List<String>) studentDoc.get("completedCourses");
+                if (completedCourses == null) {
+                    completedCourses = new ArrayList<>();
+                }
+                
+                Map<String, Object> studentInfo = new HashMap<>();
+                studentInfo.put("studentId", studentDoc.getId());
+                studentInfo.put("studentName", studentDoc.getString("name"));
+                studentInfo.put("studentID", studentDoc.getString("studentID"));
+                studentInfo.put("courses", coursesInPreviousSemester);
+                studentInfo.put("completedCourses", completedCourses);
+                studentInfo.put("semester", previousSemester);
+                studentInfo.put("year", previousYear);
+                studentsNeedingReview.add(studentInfo);
+            }
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("students", studentsNeedingReview);
+        response.put("previousSemester", previousSemester);
+        response.put("previousYear", previousYear);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/students/{studentId}/submitCourses")
+    public ResponseEntity<?> submitCourses(
+            @PathVariable String studentId,
+            @RequestBody Map<String, Object> payload,
+            HttpSession session) throws Exception {
+        String uid = (String) session.getAttribute("uid");
+        if (uid == null || uid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("No authenticated advisor.");
+        }
+
+        // Verify advisor has access to this student
+        ApiFuture<DocumentSnapshot> studentFuture = firestore.collection("students").document(studentId).get();
+        DocumentSnapshot studentDoc = studentFuture.get(5, TimeUnit.SECONDS);
+        
+        if (!studentDoc.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Student not found.");
+        }
+
+        // Verify advisor is assigned to this student
+        ApiFuture<DocumentSnapshot> advisorFuture = firestore.collection("advisors").document(uid).get();
+        DocumentSnapshot advisorDoc = advisorFuture.get(5, TimeUnit.SECONDS);
+        String advisorId = advisorDoc.getString("advisorID");
+        String studentAdvisorId = studentDoc.getString("advisorID");
+        
+        if (advisorId == null || !advisorId.equals(studentAdvisorId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You do not have access to this student.");
+        }
+
+        @SuppressWarnings("unchecked")
+        List<String> coursesToSubmit = (List<String>) payload.get("courses");
+        if (coursesToSubmit == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Courses list is required.");
+        }
+
+        // Get existing completed courses
+        @SuppressWarnings("unchecked")
+        List<String> existingCourses = (List<String>) studentDoc.get("completedCourses");
+        if (existingCourses == null) {
+            existingCourses = new ArrayList<>();
+        }
+
+        // Merge new courses with existing ones (avoid duplicates)
+        List<String> updatedCourses = new ArrayList<>(existingCourses);
+        for (String course : coursesToSubmit) {
+            if (!updatedCourses.contains(course)) {
+                updatedCourses.add(course);
+            }
+        }
+
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("completedCourses", updatedCourses);
+
+        ApiFuture<WriteResult> writeResult = firestore.collection("students").document(studentId).update(updateData);
+        writeResult.get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Courses submitted successfully");
+        response.put("submittedCount", coursesToSubmit.size());
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    private String normalizeSemester(String semester) {
+        if (semester == null) return "Fall";
+        String normalized = semester.substring(0, 1).toUpperCase() + semester.substring(1).toLowerCase();
+        return normalized.equals("Fall") || normalized.equals("Spring") ? normalized : "Fall";
+    }
 }
 
