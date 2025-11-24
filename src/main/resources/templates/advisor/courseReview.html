@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Course Review - Advisor Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        h1 {
+            color: #14213D;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #14213D;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #dc3545;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: none;
+            background-color: #6c757d;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+        .info-banner {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 30px;
+            color: #004085;
+        }
+        .student-section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            background-color: #f9f9f9;
+        }
+        .student-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #14213D;
+        }
+        .student-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #14213D;
+        }
+        .student-id {
+            color: #666;
+            font-size: 14px;
+        }
+        .courses-list {
+            margin-top: 15px;
+        }
+        .course-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .course-item:hover {
+            background-color: #f0f0f0;
+        }
+        .course-item.completed {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .course-checkbox {
+            margin-right: 15px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .course-info {
+            flex: 1;
+        }
+        .course-title {
+            font-weight: 600;
+            color: #14213D;
+            margin-bottom: 5px;
+        }
+        .course-id {
+            color: #666;
+            font-size: 14px;
+        }
+        .completed-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .submit-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+        }
+        .submit-button:hover {
+            background-color: #218838;
+        }
+        .submit-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .no-students {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error-message {
+            background-color: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #c33;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button" onclick="window.location.href='/advisor'">← Back to Advisor Portal</button>
+        <button class="logout-button" onclick="window.location.href='/logout'">Logout</button>
+        
+        <h1>Course Review</h1>
+        
+        <div class="info-banner" id="infoBanner" style="display: none;">
+            <strong>Review Required:</strong> Please review and submit courses for students who had courses in the previous semester.
+        </div>
+        
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        <div id="successMessage" class="success-message" style="display: none;"></div>
+        
+        <div id="loadingStatus" class="loading">Loading students...</div>
+        <div id="studentsContainer" style="display: none;"></div>
+        <div id="noStudents" class="no-students" style="display: none;">
+            No students require course review at this time.
+        </div>
+    </div>
+    
+    <script>
+        let courseCache = {};
+        let studentsData = [];
+        let previousSemester = '';
+        let previousYear = 0;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await loadCourseCache();
+                await loadStudentsNeedingReview();
+            } catch (error) {
+                console.error('Error initializing course review:', error);
+                showError('Failed to load course review data. Please refresh the page.');
+            }
+        });
+
+        // Load course cache
+        async function loadCourseCache() {
+            try {
+                const response = await fetch('/api/courses?limit=5000');
+                if (!response.ok) throw new Error('Failed to load courses');
+                const courses = await response.json();
+                
+                courses.forEach(course => {
+                    if (course.courseID) {
+                        courseCache[course.courseID] = course;
+                    }
+                });
+                console.log('Course cache loaded:', Object.keys(courseCache).length, 'courses');
+            } catch (error) {
+                console.error('Failed to load course cache:', error);
+                throw error;
+            }
+        }
+
+        // Load students needing review
+        async function loadStudentsNeedingReview() {
+            const loadingStatus = document.getElementById('loadingStatus');
+            const studentsContainer = document.getElementById('studentsContainer');
+            const noStudents = document.getElementById('noStudents');
+            const infoBanner = document.getElementById('infoBanner');
+
+            try {
+                const response = await fetch('/api/secure/advisors/me/studentsNeedingReview');
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to load students');
+                }
+
+                const data = await response.json();
+                studentsData = data.students || [];
+                previousSemester = data.previousSemester || '';
+                previousYear = data.previousYear || 0;
+
+                if (studentsData.length === 0) {
+                    loadingStatus.style.display = 'none';
+                    noStudents.style.display = 'block';
+                    studentsContainer.style.display = 'none';
+                    infoBanner.style.display = 'none';
+                } else {
+                    loadingStatus.style.display = 'none';
+                    noStudents.style.display = 'none';
+                    studentsContainer.style.display = 'block';
+                    infoBanner.style.display = 'block';
+                    renderStudents();
+                }
+            } catch (error) {
+                console.error('Error loading students:', error);
+                loadingStatus.textContent = 'Error loading students. Please try again.';
+                showError('Failed to load students: ' + error.message);
+            }
+        }
+
+        // Render students
+        function renderStudents() {
+            const container = document.getElementById('studentsContainer');
+            container.innerHTML = '';
+
+            if (previousSemester && previousYear) {
+                const header = document.createElement('h2');
+                header.textContent = `Courses from ${previousSemester} ${previousYear}`;
+                container.appendChild(header);
+            }
+
+            studentsData.forEach((student, studentIndex) => {
+                const studentSection = document.createElement('div');
+                studentSection.className = 'student-section';
+                
+                const studentHeader = document.createElement('div');
+                studentHeader.className = 'student-header';
+                
+                const nameDiv = document.createElement('div');
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'student-name';
+                nameSpan.textContent = student.studentName || 'Unknown Student';
+                nameDiv.appendChild(nameSpan);
+                const idSpan = document.createElement('span');
+                idSpan.className = 'student-id';
+                idSpan.textContent = `ID: ${student.studentID || student.studentId}`;
+                nameDiv.appendChild(document.createElement('br'));
+                nameDiv.appendChild(idSpan);
+                studentHeader.appendChild(nameDiv);
+                
+                studentSection.appendChild(studentHeader);
+
+                const coursesList = document.createElement('div');
+                coursesList.className = 'courses-list';
+
+                const completedCourses = student.completedCourses || [];
+                
+                student.courses.forEach(courseId => {
+                    const courseItem = document.createElement('div');
+                    courseItem.className = 'course-item';
+                    
+                    const isCompleted = completedCourses.includes(courseId);
+                    if (isCompleted) {
+                        courseItem.classList.add('completed');
+                    }
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'course-checkbox';
+                    checkbox.value = courseId;
+                    checkbox.checked = isCompleted;
+                    checkbox.dataset.studentIndex = studentIndex;
+                    checkbox.dataset.courseId = courseId;
+                    checkbox.addEventListener('change', function() {
+                        updateSubmitButton(studentIndex);
+                    });
+                    
+                    const courseInfo = document.createElement('div');
+                    courseInfo.className = 'course-info';
+                    
+                    const course = courseCache[courseId];
+                    const courseTitle = document.createElement('div');
+                    courseTitle.className = 'course-title';
+                    courseTitle.textContent = course ? course.title : courseId;
+                    if (isCompleted) {
+                        const badge = document.createElement('span');
+                        badge.className = 'completed-badge';
+                        badge.textContent = 'Already Completed';
+                        courseTitle.appendChild(badge);
+                    }
+                    
+                    const courseIdSpan = document.createElement('div');
+                    courseIdSpan.className = 'course-id';
+                    courseIdSpan.textContent = courseId;
+                    
+                    courseInfo.appendChild(courseTitle);
+                    courseInfo.appendChild(courseIdSpan);
+                    
+                    courseItem.appendChild(checkbox);
+                    courseItem.appendChild(courseInfo);
+                    
+                    coursesList.appendChild(courseItem);
+                });
+
+                const submitButton = document.createElement('button');
+                submitButton.className = 'submit-button';
+                submitButton.textContent = 'Submit Selected Courses';
+                submitButton.dataset.studentId = student.studentId;
+                submitButton.dataset.studentIndex = studentIndex;
+                submitButton.onclick = () => submitCourses(studentIndex);
+                updateSubmitButton(studentIndex);
+                
+                studentSection.appendChild(coursesList);
+                studentSection.appendChild(submitButton);
+                
+                container.appendChild(studentSection);
+            });
+        }
+
+        // Update submit button state
+        function updateSubmitButton(studentIndex) {
+            const student = studentsData[studentIndex];
+            const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-student-index="${studentIndex}"]`);
+            const submitButton = document.querySelector(`button[data-student-index="${studentIndex}"]`);
+            
+            let hasSelected = false;
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    hasSelected = true;
+                }
+            });
+            
+            if (submitButton) {
+                submitButton.disabled = !hasSelected;
+            }
+        }
+
+        // Submit courses for a student
+        async function submitCourses(studentIndex) {
+            const student = studentsData[studentIndex];
+            const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-student-index="${studentIndex}"]:checked`);
+            
+            const coursesToSubmit = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (coursesToSubmit.length === 0) {
+                alert('Please select at least one course to submit.');
+                return;
+            }
+            
+            const confirmed = confirm(`Submit ${coursesToSubmit.length} course(s) for ${student.studentName}?`);
+            if (!confirmed) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/secure/advisors/students/${student.studentId}/submitCourses`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        courses: coursesToSubmit
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to submit courses');
+                }
+                
+                const result = await response.json();
+                showSuccess(`Successfully submitted ${result.submittedCount || coursesToSubmit.length} course(s) for ${student.studentName}.`);
+                
+                // Reload students to update completed status
+                await loadStudentsNeedingReview();
+            } catch (error) {
+                console.error('Error submitting courses:', error);
+                showError('Error submitting courses: ' + error.message);
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+
