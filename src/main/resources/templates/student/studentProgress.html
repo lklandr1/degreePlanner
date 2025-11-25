@@ -96,6 +96,17 @@
             color: #14213D;
             margin: 10px 0;
         }
+        .credits-needed {
+            font-size: 18px;
+            color: #666;
+            margin-top: 10px;
+        }
+        .credits-progress {
+            font-size: 16px;
+            color: #14213D;
+            margin-top: 5px;
+            font-weight: 500;
+        }
         .completed-courses-section {
             margin-top: 30px;
         }
@@ -161,6 +172,10 @@
             <div id="creditsSummary" class="credits-summary" style="display: none;">
                 <h2>Total Credits Completed</h2>
                 <div class="credits-total" id="creditsTotal">0</div>
+                <div class="credits-needed" id="creditsNeeded" style="display: none;">
+                    <span id="creditsNeededText"></span>
+                </div>
+                <div class="credits-progress" id="creditsProgress" style="display: none;"></div>
             </div>
             
             <div class="completed-courses-section">
@@ -175,12 +190,14 @@
     <script>
         let courseCache = {};
         let studentData = null;
+        let majorData = null;
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async function() {
             try {
                 await loadCourseCache();
                 await loadStudentData();
+                await loadMajorData();
                 renderCompletedCourses();
             } catch (error) {
                 console.error('Error loading progress data:', error);
@@ -217,6 +234,29 @@
             } catch (error) {
                 console.error('Failed to load student data:', error);
                 throw error;
+            }
+        }
+
+        // Load major data to get total hours needed
+        async function loadMajorData() {
+            try {
+                if (!studentData || !studentData.majorID) {
+                    console.warn('Student majorID not found');
+                    return;
+                }
+
+                const response = await fetch('/api/majors');
+                if (!response.ok) throw new Error('Failed to load majors');
+                const majors = await response.json();
+
+                // Find the student's major
+                majorData = majors.find(m => m.id === studentData.majorID || m.majorID === studentData.majorID);
+                if (!majorData) {
+                    console.warn('Major not found for majorID:', studentData.majorID);
+                }
+            } catch (error) {
+                console.error('Failed to load major data:', error);
+                // Don't throw - we can still show progress without total hours
             }
         }
 
@@ -263,6 +303,25 @@
             // Display total credits
             creditsTotal.textContent = totalCredits.toFixed(1);
             creditsSummary.style.display = 'block';
+
+            // Display total hours needed if available
+            const creditsNeededDiv = document.getElementById('creditsNeeded');
+            const creditsNeededText = document.getElementById('creditsNeededText');
+            const creditsProgressDiv = document.getElementById('creditsProgress');
+            
+            if (majorData && majorData.totalHours) {
+                const totalHoursNeeded = parseFloat(majorData.totalHours) || 0;
+                creditsNeededText.textContent = `Total Hours Needed: ${totalHoursNeeded.toFixed(1)}`;
+                creditsNeededDiv.style.display = 'block';
+                
+                // Show progress
+                const percentage = totalHoursNeeded > 0 ? (totalCredits / totalHoursNeeded * 100) : 0;
+                creditsProgressDiv.textContent = `Progress: ${percentage.toFixed(1)}% (${totalCredits.toFixed(1)} / ${totalHoursNeeded.toFixed(1)} hours)`;
+                creditsProgressDiv.style.display = 'block';
+            } else {
+                creditsNeededDiv.style.display = 'none';
+                creditsProgressDiv.style.display = 'none';
+            }
 
             // Display courses
             if (coursesWithData.length === 0) {
