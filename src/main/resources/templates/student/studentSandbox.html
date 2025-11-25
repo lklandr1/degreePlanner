@@ -753,18 +753,19 @@
         }
 
         // Check if prerequisites are met for a course
-        // Returns { met: boolean, missing: string[] }
+        // Returns { met: boolean, missing: string[], met: string[] }
+        // Changed: If at least one prerequisite is met, the course can be scheduled
         function checkPrerequisites(courseId, semesterIndex) {
             const course = courseCache[courseId];
             if (!course) {
                 // If course not in cache, assume prerequisites are met (can't check)
-                return { met: true, missing: [] };
+                return { met: true, missing: [], metPrereqs: [] };
             }
 
             const prerequisites = parsePrerequisites(course);
             if (prerequisites.length === 0) {
                 // No prerequisites, so they're met
-                return { met: true, missing: [] };
+                return { met: true, missing: [], metPrereqs: [] };
             }
 
             // Get completed courses from student data
@@ -779,13 +780,16 @@
             // Combine completed courses, previous semester courses, and same semester courses
             const availableCourses = [...completedCourses, ...previousSemesterCourses, ...sameSemesterCourses];
             
-            // Check which prerequisites are missing
-            const missing = prerequisites.filter(prereq => {
+            // Check which prerequisites are met and which are missing
+            const metPrereqs = [];
+            const missing = [];
+            
+            prerequisites.forEach(prereq => {
                 // Normalize prerequisite (might be courseID or code)
                 const normalizedPrereq = prereq.trim().toUpperCase();
                 
                 // Check if prerequisite is in available courses
-                return !availableCourses.some(availableId => {
+                const isMet = availableCourses.some(availableId => {
                     const availableCourse = courseCache[availableId];
                     if (!availableCourse) {
                         // If not in cache, compare IDs directly
@@ -799,11 +803,19 @@
                     
                     return courseIdMatch || codeMatch || idMatch;
                 });
+                
+                if (isMet) {
+                    metPrereqs.push(prereq);
+                } else {
+                    missing.push(prereq);
+                }
             });
 
+            // If at least one prerequisite is met, the course can be scheduled
             return {
-                met: missing.length === 0,
-                missing: missing
+                met: metPrereqs.length > 0,
+                missing: missing,
+                metPrereqs: metPrereqs
             };
         }
 
